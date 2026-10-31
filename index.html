@@ -1,0 +1,1327 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Matetristik: matematik + Tetris. Soruyu bil, parçayı yönet. Hem eğlence hem çalışma.">
+<meta property="og:title" content="Matetristik">
+<meta property="og:description" content="Matematik + Tetris. Soruyu bil, parçayı yönet!">
+<meta name="theme-color" content="#14181f">
+<style>body{margin:0}</style>
+</head>
+<body><title>Matetristik</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Lexend:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: kara tahta zemini; solda büyük oyun alanı, sağda soru panosu. Tek koyu görünüm (bilinçli). */
+:root{
+  --bg:#141a1f;          /* kara tahta */
+  --bg-2:#1b232a;
+  --panel:#202a32;
+  --line:#2f3c46;
+  --fg:#e9eef0;          /* tebeşir beyazı */
+  --muted:#93a3ad;
+  --accent:#ffd34e;      /* tebeşir sarısı */
+  --good:#5fd68a;
+  --bad:#ff6b6b;
+  --info:#6cc5ff;
+  --f-display:"Bungee", "Impact", "Arial Black", system-ui, sans-serif;
+  --f-body:"Lexend", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-math:"JetBrains Mono", ui-monospace, "Consolas", monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:12px;box-sizing:border-box;overflow-x:hidden}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hidden{display:none!important}
+.label{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+kbd{font-family:var(--f-math);font-size:12px;background:var(--bg-2);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 6px;color:var(--fg)}
+
+/* ---------- Menü ---------- */
+#menu{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:22px;padding-block:8px 20px}
+.langbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end}
+.lang{background:var(--bg-2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px}
+.lang[aria-pressed="true"]{background:var(--fg);color:#121212;border-color:var(--fg)}
+.hero{position:relative;border-radius:16px;overflow:hidden;background:#0d1216;border:2px solid var(--line);min-height:260px;display:flex;align-items:flex-end}
+#cover{position:absolute;inset:0;width:100%;height:100%;opacity:.55}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(13,18,22,.92) 0%,rgba(13,18,22,.6) 55%,rgba(13,18,22,.15) 100%);pointer-events:none}
+.hero-in{position:relative;z-index:1;padding:28px clamp(18px,4vw,40px);display:flex;flex-direction:column;gap:14px;max-width:780px}
+.tiles{margin:0;display:flex;flex-direction:column;gap:6px;font-weight:400}
+.word{display:flex;flex-wrap:wrap;gap:4px}
+.tile{--s:clamp(28px,5vw,56px);width:var(--s);height:var(--s);display:grid;place-items:center;font-family:var(--f-display);font-size:calc(var(--s)*.58);color:#121212;border-radius:calc(var(--s)*.18);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 60%,#fff) 0%,var(--c) 55%,color-mix(in srgb,var(--c) 72%,#000) 100%);
+  box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--c) 50%,#000),0 4px 0 color-mix(in srgb,var(--c) 45%,#000);
+  animation:drop .5s cubic-bezier(.3,1.4,.6,1) backwards;animation-delay:calc(var(--i)*45ms)}
+.tile.op{color:#fff;background:#26323b;box-shadow:inset 0 0 0 2px #3a4954,0 4px 0 #0a0f13}
+@keyframes drop{from{transform:scale(.5)}}
+.lede{margin:0;color:var(--fg);max-width:58ch;line-height:1.6;font-size:16px}
+.brain{display:flex;flex-direction:column;gap:12px}
+.brain h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(18px,2.4vw,24px);text-wrap:balance}
+.brain-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.brain-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.brain-grid{grid-template-columns:1fr}}
+.brain-grid div{background:var(--panel);border-radius:10px;padding:14px;color:var(--muted);font-size:13.5px;line-height:1.5;display:flex;flex-direction:column;gap:4px}
+.brain-grid b{color:var(--fg);font-size:15px}
+.brain-grid i{font-style:normal;width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:var(--c);color:#121212;font-weight:700;font-size:18px;margin-bottom:4px}
+.tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:820px){.tiers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.tiers{grid-template-columns:1fr}}
+.tier{background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:8px;transition:border-color .15s, transform .15s}
+.tier:hover{border-color:var(--muted);transform:translateY(-2px)}
+.tier[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+.t-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.t-name{font-family:var(--f-display);font-size:19px}
+.t-step{font-family:var(--f-math);font-size:12px;color:var(--muted);text-align:right}
+.t-desc{color:var(--muted);font-size:13.5px;line-height:1.45}
+.t-sample{font-family:var(--f-math);color:var(--accent);font-size:14px}
+.t-best{font-size:12px;color:var(--muted)}
+.start-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--bg-2);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:13px}
+.chip[aria-pressed="true"]{background:var(--accent);color:#1a1a1a;border-color:var(--accent)}
+.btn-main{background:var(--accent);color:#1a1a1a;border:0;border-radius:10px;padding:16px 30px;font-family:var(--f-display);font-size:19px;box-shadow:0 4px 0 #a8862a}
+.btn-main:hover{filter:brightness(1.07)}
+.btn-main:active{transform:translateY(2px);box-shadow:0 2px 0 #a8862a}
+.lb-sec{display:flex;flex-direction:column;gap:10px}
+.lb-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.lb-head h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(18px,2.4vw,24px)}
+.lb-note{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5;max-width:70ch}
+.lb{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-width:640px}
+.lb li{display:grid;grid-template-columns:40px minmax(0,1fr) auto auto;gap:12px;align-items:center;background:var(--panel);border-radius:8px;padding:10px 14px}
+.lb .rk{font-family:var(--f-display);font-size:18px;color:var(--muted);text-align:center}
+.lb li:nth-child(1) .rk{color:#ffd34e} .lb li:nth-child(2) .rk{color:#cfd8dc} .lb li:nth-child(3) .rk{color:#ff9a3c}
+.lb .nm{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb .mt{font-size:12px;color:var(--muted);white-space:nowrap}
+.lb .sc{font-family:var(--f-math);font-size:18px;font-variant-numeric:tabular-nums;color:var(--accent)}
+.lb li.me{outline:2px solid var(--accent)}
+.lb .empty{display:block;color:var(--muted);text-align:center;padding:16px}
+@media (max-width:480px){.lb .mt{display:none}.lb li{grid-template-columns:32px minmax(0,1fr) auto}}
+.savef{display:flex;gap:8px}
+.savef input{flex:1;min-width:0;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--fg);font:inherit}
+.savef input:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.savef button{background:var(--accent);color:#1a1a1a;border:0;border-radius:10px;padding:12px 14px;font-weight:700}
+.savef button:disabled{opacity:.5}
+.save-msg{color:var(--good);min-height:1.3em;font-size:14px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;color:var(--muted);font-size:13.5px;line-height:1.6}
+.rules div{border-top:1px solid var(--line);padding-top:10px}
+.rules b{color:var(--fg);display:block;margin-bottom:2px}
+
+/* ---------- Oyun ---------- */
+#game{display:flex;gap:22px;justify-content:center;align-items:flex-start;height:100%}
+.board-wrap{display:flex;flex-direction:column;gap:10px;align-items:center}
+#board{display:block;background:#0d1216;border:3px solid var(--line);border-radius:8px;touch-action:none;box-shadow:0 0 0 6px #0d1216,0 20px 50px rgba(0,0,0,.45)}
+.side{flex:0 1 400px;max-width:100%;display:flex;flex-direction:column;gap:14px;min-width:0}
+.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--panel);border-radius:8px;padding:8px 10px;min-width:0}
+.multb{color:var(--warn,#ffd166);font-family:var(--f-math);font-weight:700}
+.stat .v{font-family:var(--f-math);font-size:22px;font-variant-numeric:tabular-nums}
+.lvl{background:var(--panel);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.lvl-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.lvl-name{font-weight:700;min-width:0}
+.bar{height:8px;background:var(--bg-2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.qcard{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;transition:border-color .2s}
+.qcard.ok{border-color:var(--good)} .qcard.no{border-color:var(--bad)}
+.qtext{font-family:var(--f-math);font-size:clamp(22px,2.6vw,32px);font-weight:700;text-align:center;min-height:2.6em;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:.25em;line-height:1.3;overflow-wrap:anywhere}
+.qtext sub,.qtext sup{font-size:.6em}
+.qtext small{font-size:.5em;font-weight:500;color:var(--muted);flex-basis:100%}
+.qhint{text-align:center;color:var(--muted);font-size:13px;min-height:1.3em;overflow-wrap:anywhere}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opt{background:var(--bg-2);border:2px solid var(--line);border-radius:12px;padding:16px 8px;font-family:var(--f-math);font-size:26px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px;font-variant-numeric:tabular-nums;min-height:72px;touch-action:manipulation;box-shadow:0 3px 0 #0d1216}
+.opt small{font-family:var(--f-body);font-size:11px;color:var(--muted);font-weight:400}
+.opt:not(:disabled):hover{border-color:var(--accent)}
+.opt:not(:disabled):active{transform:translateY(2px);box-shadow:none}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 18%,var(--bg-2))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 18%,var(--bg-2))}
+.passbtn{background:transparent;border:1px dashed var(--muted);border-radius:10px;padding:9px;font-size:13px;color:var(--fg);touch-action:manipulation}
+.passbtn:not(:disabled):hover{border-color:var(--accent);color:var(--accent)}
+.passbtn:disabled{opacity:.35;cursor:default}
+.status{min-height:1.5em;text-align:center;font-weight:500}
+.status.ok{color:var(--good)} .status.no{color:var(--bad)} .status.wait{color:var(--info)}
+.timer{height:5px;background:var(--bg-2);border-radius:99px;overflow:hidden}
+.timer i{display:block;height:100%;width:100%;background:var(--info)}
+.row2{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:stretch}
+.next{background:var(--panel);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;align-items:center}
+.help{font-size:12.5px;color:var(--muted);line-height:1.9;background:var(--panel);border-radius:8px;padding:8px 12px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.tbtn{background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px}
+.touch{display:none;gap:10px;width:100%;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none}
+.touch button{background:var(--panel);border:2px solid var(--line);border-radius:12px;flex:1;max-width:76px;height:60px;font-size:24px;touch-action:none}
+.touch button:active{background:var(--line);border-color:var(--accent)}
+.touch .tpause{display:none;max-width:52px;font-size:16px}
+.touch-hint{display:none;font-size:12px;color:var(--muted);text-align:center}
+@media (pointer:coarse){.touch{display:flex}.touch-hint{display:block}.help{display:none}}
+@media (max-width:720px){
+  #game{flex-direction:column;align-items:center;height:auto;gap:10px}
+  .side{width:100%;flex:none;order:-1;gap:8px}
+  #lvlNeed{display:none}
+  .hud .stat{padding:4px 8px}.hud .multb{color:var(--warn,#ffd166);font-family:var(--f-math);font-weight:700}
+.stat .v{font-size:18px}
+  .qcard{padding:10px 12px;gap:8px}
+  .qtext{font-size:22px;min-height:2.4em}
+  .opt{padding:10px 6px;font-size:22px;min-height:58px}
+  .row2,.toolbar .tbtn:not(#pauseBtn){display:none}
+  .lvl{padding:6px 10px}
+}
+/* Telefon: tahtaya en fazla yeri bırak */
+@media (max-width:720px) and (pointer:coarse){
+  .lvl,#qLabel,#prev,.toolbar{display:none}
+  .qcard{gap:6px}
+  .qtext{min-height:2.2em;font-size:21px}
+  .opt{min-height:52px;padding:6px}
+  .opt small{display:none}
+  .touch button{height:52px}
+  .touch .tpause{display:block}
+}
+
+/* Kaplamalar */
+.overlay{position:fixed;inset:0;background:rgba(8,11,14,.78);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.modal{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:26px;max-width:440px;width:100%;display:flex;flex-direction:column;gap:14px;text-align:center}
+.modal h2{font-family:var(--f-display);font-weight:400;margin:0;font-size:30px}
+.modal .big{font-family:var(--f-math);font-size:40px;color:var(--accent)}
+.modal .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn-sec{background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.toast{position:fixed;left:50%;top:calc(18px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--accent);color:#1a1a1a;font-family:var(--f-display);padding:10px 20px;border-radius:8px;z-index:30;font-size:18px;pointer-events:none;animation:pop 2.2s ease forwards;white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-10px)}10%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-6px)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<!-- ================= MENÜ ================= -->
+<section id="menu">
+  <div class="langbar" id="langbar" role="group" aria-label="Language"></div>
+
+  <header class="hero">
+    <canvas id="cover" aria-hidden="true"></canvas>
+    <div class="hero-in">
+      <div class="label" data-t="eyebrow"></div>
+      <h1 class="tiles" id="title"><span class="word" id="w1"></span><span class="word" id="w2"></span></h1>
+      <p class="lede" data-t="lede"></p>
+    </div>
+  </header>
+
+  <div class="brain">
+    <h2 data-t="brainTitle"></h2>
+    <div class="brain-grid">
+      <div><i style="--c:#ffd34e">+</i><b data-t="b1t"></b><span data-t="b1d"></span></div>
+      <div><i style="--c:#3ee0f0">⟳</i><b data-t="b2t"></b><span data-t="b2d"></span></div>
+      <div><i style="--c:#ff5c7a">⏱</i><b data-t="b3t"></b><span data-t="b3d"></span></div>
+      <div><i style="--c:#4ee08a">◎</i><b data-t="b4t"></b><span data-t="b4d"></span></div>
+    </div>
+  </div>
+
+  <div class="label" data-t="step1"></div>
+  <div class="tiers" id="tiers"></div>
+
+  <div class="label" data-t="step2"></div>
+  <div class="chips" id="chips"></div>
+
+  <div class="start-row">
+    <button class="btn-main" id="startBtn" data-t="start"></button>
+    <span class="label" id="startInfo"></span>
+  </div>
+
+  <section class="lb-sec">
+    <div class="lb-head"><h2 data-t="lbTitle"></h2><span class="label" id="lbTier"></span></div>
+    <p class="lb-note" data-t="lbNote"></p>
+    <ol class="lb" id="lb"></ol>
+  </section>
+
+  <div class="rules">
+    <div><b data-t="r1t"></b><span data-t="r1d"></span></div>
+    <div><b data-t="r2t"></b><span data-t="r2d"></span></div>
+    <div><b data-t="r3t"></b><span data-t="r3d"></span></div>
+    <div><b data-t="r4t"></b><span data-t="r4d"></span></div>
+  </div>
+</section>
+
+<!-- ================= OYUN ================= -->
+<section id="game" class="hidden">
+  <div class="board-wrap">
+    <canvas id="board"></canvas>
+    <div class="touch" id="touch">
+      <button data-a="left" aria-label="◀">◀</button>
+      <button data-a="rot" aria-label="⟳">⟳</button>
+      <button data-a="right" aria-label="▶">▶</button>
+      <button data-a="down" aria-label="▼">▼</button>
+      <button data-a="drop" aria-label="⤓">⤓</button>
+      <button data-a="pause" class="tpause" aria-label="Pause">❚❚</button>
+    </div>
+    <div class="touch-hint" data-t="touchHint"></div>
+  </div>
+
+  <aside class="side">
+    <div class="hud">
+      <div class="stat"><div class="label"><span data-t="score"></span> <span class="multb" id="mult">×1</span></div><div class="v" id="score">0</div></div>
+      <div class="stat"><div class="label" data-t="lines"></div><div class="v" id="lines">0</div></div>
+      <div class="stat"><div class="label" data-t="streak"></div><div class="v" id="streak">0</div></div>
+    </div>
+
+    <div class="lvl">
+      <div class="lvl-top"><span class="lvl-name" id="lvlName">—</span><span class="label" id="lvlStep">—</span></div>
+      <div class="bar"><i id="lvlBar"></i></div>
+      <div class="label" id="lvlNeed">—</div>
+    </div>
+
+    <div class="qcard" id="qcard">
+      <div class="label" id="qLabel">—</div>
+      <div class="qtext" id="qtext">—</div>
+      <div class="opts">
+        <button class="opt" id="opt0"><span>—</span><small data-t="key1"></small></button>
+        <button class="opt" id="opt1"><span>—</span><small data-t="key2"></small></button>
+      </div>
+      <button class="passbtn" id="passBtn"></button>
+      <div class="timer"><i id="timerBar"></i></div>
+      <div class="status wait" id="status"></div>
+      <div class="qhint" id="prev"></div>
+    </div>
+
+    <div class="row2">
+      <div class="next"><div class="label" data-t="next"></div><canvas id="next" width="96" height="96"></canvas></div>
+      <div class="help" data-t="help"></div>
+    </div>
+
+    <div class="toolbar">
+      <button class="tbtn" id="pauseBtn"></button>
+      <button class="tbtn" id="muteBtn"></button>
+      <button class="tbtn" id="menuBtn" data-t="toMenu"></button>
+    </div>
+  </aside>
+</section>
+
+<div class="overlay hidden" id="overlay"><div class="modal" id="modal"></div></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ================= Diller ================= */
+const LANGS = [["tr","Türkçe"],["en","English"],["es","Español"],["ru","Русский"],["de","Deutsch"],["fr","Français"]];
+const K = '<kbd>←</kbd> <kbd>→</kbd>', KU = '<kbd>↑</kbd>', KD = '<kbd>↓</kbd>';
+const I18N = {
+ tr: {
+  eyebrow:"Hesapla · Döndür · Yerleştir",
+  lede:"Eğlenirken çalış, çalışırken eğlen. Her parça düşerken bir soru gelir. Doğru cevap parçanın kontrolünü sana verir. Yanlış cevapta parça olduğu yerden dümdüz aşağı iner.",
+  brainTitle:"Beynin birçok bölümü aynı anda çalışır",
+  b1t:"Hesaplama", b1d:"Soruları zihinden çözersin; basit toplamadan büyük üslü sayılara kadar.",
+  b2t:"Uzamsal düşünme", b2d:"Parçayı kafanda döndürüp tahtadaki en iyi boşluğa yerleştirirsin.",
+  b3t:"Hızlı karar", b3d:"Parça yere değmeden iki şıktan doğru olanı seçersin.",
+  b4t:"Dikkat ve planlama", b4d:"Soruyu çözerken tahtadaki boşlukları ve sıradaki parçayı da aklında tutarsın.",
+  step1:"1 · Seviyeni seç", step2:"2 · Başlangıç bölümü", start:"Oyuna başla",
+  r1t:"Doğru cevap", r1d:`Parçanın kontrolü sende: ${K} kaydır, ${KU} döndür, ${KD} hızlandır, <kbd>Boşluk</kbd> bırak.`,
+  r2t:"Yanlış cevap", r2d:"Parça bulunduğu sütunda hızla aşağı düşer, puan yok, seri sıfırlanır.",
+  r3t:"Cevap seçme", r3d:"Tıkla, dokun ya da <kbd>1</kbd> / <kbd>2</kbd> tuşuna bas. Parça yere oturmadan cevaplamazsan süre dolar. 3 pas hakkın var: <kbd>3</kbd> ile soruyu geçersin, parça yine senin kontrolünde olur.",
+  r4t:"Bölümler ve hız", r4d:"Her bölüm 20 sorudur (İlkokul 100, diğer seviyeler 120 soru). Her sorudan sonra parçalar biraz hızlanır. Hızlı ve doğru cevap verirsen oyun daha da hızlanır ama hız bonusu kazanırsın. Satır puanları birikir; seviye çarpanı: İlkokul ×1, Ortaokul ×2, Lise ×4, Üniversite ×6, Doktora ×8, Profesör ×10.",
+  touchHint:"Tahtada: dokun = döndür · sürükle = kaydır · aşağı fırlat = bırak",
+  score:"Puan", lines:"Satır", streak:"Seri", next:"Sıradaki", key1:"tuş 1", key2:"tuş 2",
+  help:`<kbd>1</kbd>/<kbd>2</kbd> cevap · ${K} kaydır · ${KU} döndür<br>${KD} hızlandır · <kbd>Boşluk</kbd> bırak<br><kbd>P</kbd> duraklat · <kbd>M</kbd> ses`,
+  pause:"Duraklat (P)", resume:"Devam (P)", soundOn:"Ses: açık (M)", soundOff:"Ses: kapalı (M)", toMenu:"Menüye dön",
+  qLabel:"Soru · {lv} · {p} puan", wait:"Cevapla, parçayı yönet!",
+  ok:"Doğru! +{p} · Kontrol sende", okBonus:"Doğru! +{p} (+{b} seri) · Kontrol sende",
+  wrong:"Yanlış! Doğrusu {a}. Parça düşüyor…", timeout:"Süre doldu. Doğrusu {a}.", nudge:"Önce soruyu doğru cevapla, sonra yönetebilirsin.",
+  prevOk:"Önceki: Doğru · {q} = {a}", prevWrong:"Önceki: Yanlış · {q} = {a}", prevTimeout:"Önceki: Süre doldu · doğru cevap {a}",
+  linePts:"{n} satır! +{p} (×{x})", step:"Bölüm {n}/{m}", need:"Soru {n}/{m} · Hız ×{s}",
+  win:"Seviye tamamlandı!", winText:"{m} sorunun {c} tanesini doğru bildin.", fast:"⚡ Hızlı! +{f}",
+  pass:"Pas · {n} hak (3)", passed:"Pas geçtin · Kontrol sende", prevPass:"Önceki: Pas · {q} = {a}",
+  lbTitle:"Sıralama", lbNote:"Bu cihazda oynanan en iyi skorlar. Arkadaşlarla ve tüm dünyayla sıralama online sürümde gelecek.",
+  lbEmpty:"Henüz skor yok. Bir oyun oyna, adını yaz, listeye gir!", namePh:"Adın", save:"Listeye kaydet", saved:"Kaydedildi · {r}. sıradasın", lbStage:"Bölüm {n}", toast:"Bölüm {n}: {name}",
+  paused:"Duraklatıldı", pausedHint:"P veya Esc ile devam et", cont:"Devam et", menu:"Menü",
+  over:"Oyun bitti", newBest:"Yeni rekor!", best:"Rekor: {n}", summary:"{tier} · Bölüm {n} · {l} satır · %{acc} doğru",
+  again:"Tekrar oyna", choose:"Seviye seç", levels:"{n} bölüm · {q} soru", startInfo:"{tier} · {n}. bölüm: {name}",
+  pct:p=>`%${p}`,
+  tiers:[
+   ["İlkokul","Toplama, çıkarma, çarpım tablosu ve basit bölme.",["Toplama","Çıkarma","Çarpım tablosu","Basit bölme","Karışık"]],
+   ["Ortaokul","Çok basamaklı işlemler, zincir çarpma, işlem önceliği, negatifler, üslü sayılar.",["İki basamaklı toplama/çıkarma","Zincir çarpma","Bölme","İşlem önceliği","Negatif sayılar","Üslü sayılar"]],
+   ["Lise","Kareler, küpler, karekök, üslü sayılar, yüzde ve parantezli işlemler.",["Kareler ve küpler","Karekök","Üslü sayılarla işlem","Yüzde","Eksik sayıyı bul","Parantezli işlemler"]],
+   ["Üniversite","Büyük sayılarla dört işlem, uzun bölme, üslü ve köklü ifadeler.",["Büyük toplama/çıkarma","Büyük çarpma","Uzun bölme","Üslü ifadeler","Kök ve üs","Uzun işlem zinciri"]],
+   ["Doktora","Zihinden hızlı çarpma, kareler, büyük üsler, yüzde zincirleri, uzun işlemler.",["Zihinden çarpma","Kare alma","Büyük üsler","Yüzde zinciri","İşlem önceliği ustası","Negatif tabanlı üsler"]],
+   ["Profesör","En hızlı zihinler için: büyük çarpımlar, üç basamaklı kareler, büyük bölmeler, hız turu.",["Büyük zihinden çarpma","Üç basamaklı kare","Üç çarpanlı çarpım","Büyük bölme","Üs ve kök karışık","Hız turu"]],
+  ]},
+ en: {
+  eyebrow:"Calculate · Rotate · Place",
+  lede:"Study while you play, play while you study. A question appears as each piece falls. A right answer gives you control of the piece. A wrong answer sends it straight down where it is.",
+  brainTitle:"Many parts of your brain work at once",
+  b1t:"Calculation", b1d:"You solve problems in your head, from simple addition all the way to big powers.",
+  b2t:"Spatial thinking", b2d:"You rotate the piece in your mind and fit it into the best gap on the board.",
+  b3t:"Quick decisions", b3d:"You pick the right one of two answers before the piece lands.",
+  b4t:"Focus and planning", b4d:"While solving, you keep the gaps on the board and the next piece in mind.",
+  step1:"1 · Choose your level", step2:"2 · Starting stage", start:"Start game",
+  r1t:"Right answer", r1d:`You control the piece: ${K} move, ${KU} rotate, ${KD} soft drop, <kbd>Space</kbd> hard drop.`,
+  r2t:"Wrong answer", r2d:"The piece drops fast in its column, no points, and your streak resets.",
+  r3t:"Answering", r3d:"Click, tap or press <kbd>1</kbd> / <kbd>2</kbd>. If the piece lands before you answer, time is up. You have 3 passes: press <kbd>3</kbd> to skip a question and still control the piece.",
+  r4t:"Stages and speed", r4d:"Each stage has 20 questions (Primary School 100, other levels 120). Pieces speed up a little after every question. Answer fast and right, and the game speeds up even more, but you earn a speed bonus. Line points add up, with a level multiplier: Primary ×1, Middle ×2, High ×4, University ×6, Doctorate ×8, Professor ×10.",
+  touchHint:"On the board: tap = rotate · drag = move · flick down = drop",
+  score:"Score", lines:"Lines", streak:"Streak", next:"Next", key1:"key 1", key2:"key 2",
+  help:`<kbd>1</kbd>/<kbd>2</kbd> answer · ${K} move · ${KU} rotate<br>${KD} soft drop · <kbd>Space</kbd> drop<br><kbd>P</kbd> pause · <kbd>M</kbd> sound`,
+  pause:"Pause (P)", resume:"Resume (P)", soundOn:"Sound: on (M)", soundOff:"Sound: off (M)", toMenu:"Back to menu",
+  qLabel:"Question · {lv} · {p} pts", wait:"Answer to steer the piece!",
+  ok:"Correct! +{p} · You're in control", okBonus:"Correct! +{p} (+{b} streak) · You're in control",
+  wrong:"Wrong! It was {a}. The piece is dropping…", timeout:"Time's up. It was {a}.", nudge:"Answer the question correctly first, then you can steer.",
+  prevOk:"Last: Correct · {q} = {a}", prevWrong:"Last: Wrong · {q} = {a}", prevTimeout:"Last: Time's up · answer was {a}",
+  linePts:"{n} lines! +{p} (×{x})", step:"Stage {n}/{m}", need:"Question {n}/{m} · Speed ×{s}",
+  win:"Level complete!", winText:"You got {c} of {m} questions right.", fast:"⚡ Fast! +{f}",
+  pass:"Pass · {n} left (3)", passed:"Passed · You're in control", prevPass:"Last: Passed · {q} = {a}",
+  lbTitle:"Leaderboard", lbNote:"Best scores played on this device. Rankings with friends and the whole world will come with the online version.",
+  lbEmpty:"No scores yet. Play a game, enter your name and get on the list!", namePh:"Your name", save:"Save to leaderboard", saved:"Saved · you're #{r}", lbStage:"Stage {n}", toast:"Stage {n}: {name}",
+  paused:"Paused", pausedHint:"Press P or Esc to continue", cont:"Continue", menu:"Menu",
+  over:"Game over", newBest:"New record!", best:"Record: {n}", summary:"{tier} · Stage {n} · {l} lines · {acc}% correct",
+  again:"Play again", choose:"Choose level", levels:"{n} stages · {q} questions", startInfo:"{tier} · stage {n}: {name}",
+  pct:p=>`${p}%`,
+  tiers:[
+   ["Primary School","Addition, subtraction, times tables and simple division.",["Addition","Subtraction","Times tables","Simple division","Mixed"]],
+   ["Middle School","Multi-digit arithmetic, chain multiplication, order of operations, negatives, powers.",["Two-digit add/subtract","Chain multiplication","Division","Order of operations","Negative numbers","Powers"]],
+   ["High School","Squares, cubes, square roots, powers, percentages and brackets.",["Squares and cubes","Square roots","Working with powers","Percentages","Find the missing number","Brackets"]],
+   ["University","Four operations with big numbers, long division, powers and roots.",["Big addition/subtraction","Big multiplication","Long division","Power expressions","Roots and powers","Long chains"]],
+   ["PhD","Fast mental multiplication, squares, big powers, percentage chains, long expressions.",["Mental multiplication","Squaring","Big powers","Percentage chains","Order of operations pro","Negative bases"]],
+   ["Professor","For the fastest minds: big products, three-digit squares, big divisions, speed round.",["Big mental multiplication","Three-digit squares","Three-factor products","Big division","Powers and roots mix","Speed round"]],
+  ]},
+ es: {
+  eyebrow:"Calcula · Gira · Coloca",
+  lede:"Estudia jugando y juega estudiando. Con cada pieza que cae aparece una pregunta. Si aciertas, controlas la pieza. Si fallas, cae en línea recta desde donde está.",
+  brainTitle:"Muchas partes del cerebro trabajan a la vez",
+  b1t:"Cálculo", b1d:"Resuelves operaciones de cabeza, desde sumas sencillas hasta potencias grandes.",
+  b2t:"Pensamiento espacial", b2d:"Giras la pieza mentalmente y la encajas en el mejor hueco del tablero.",
+  b3t:"Decisión rápida", b3d:"Eliges la respuesta correcta entre dos antes de que la pieza toque fondo.",
+  b4t:"Atención y planificación", b4d:"Mientras resuelves, recuerdas los huecos del tablero y la siguiente pieza.",
+  step1:"1 · Elige tu nivel", step2:"2 · Etapa inicial", start:"Empezar",
+  r1t:"Respuesta correcta", r1d:`Controlas la pieza: ${K} mover, ${KU} girar, ${KD} acelerar, <kbd>Espacio</kbd> soltar.`,
+  r2t:"Respuesta incorrecta", r2d:"La pieza cae rápido en su columna, sin puntos, y la racha vuelve a cero.",
+  r3t:"Responder", r3d:"Haz clic, toca o pulsa <kbd>1</kbd> / <kbd>2</kbd>. Si la pieza se asienta antes, se acaba el tiempo. Tienes 3 pases: pulsa <kbd>3</kbd> para saltar una pregunta y seguir controlando la pieza.",
+  r4t:"Etapas y velocidad", r4d:"Cada etapa tiene 20 preguntas (Primaria 100, los demás niveles 120). Las piezas aceleran un poco tras cada pregunta. Si respondes rápido y bien, el juego acelera aún más, pero ganas un bono de velocidad. Los puntos de líneas se suman con un multiplicador por nivel: ×1, ×2, ×4, ×6, ×8, ×10.",
+  touchHint:"En el tablero: toca = girar · arrastra = mover · desliza abajo = soltar",
+  score:"Puntos", lines:"Líneas", streak:"Racha", next:"Siguiente", key1:"tecla 1", key2:"tecla 2",
+  help:`<kbd>1</kbd>/<kbd>2</kbd> responder · ${K} mover · ${KU} girar<br>${KD} acelerar · <kbd>Espacio</kbd> soltar<br><kbd>P</kbd> pausa · <kbd>M</kbd> sonido`,
+  pause:"Pausa (P)", resume:"Seguir (P)", soundOn:"Sonido: sí (M)", soundOff:"Sonido: no (M)", toMenu:"Volver al menú",
+  qLabel:"Pregunta · {lv} · {p} pts", wait:"¡Responde para mover la pieza!",
+  ok:"¡Correcto! +{p} · Tienes el control", okBonus:"¡Correcto! +{p} (+{b} racha) · Tienes el control",
+  wrong:"¡Incorrecto! Era {a}. La pieza cae…", timeout:"Se acabó el tiempo. Era {a}.", nudge:"Primero responde bien la pregunta y luego podrás moverla.",
+  prevOk:"Anterior: Correcto · {q} = {a}", prevWrong:"Anterior: Incorrecto · {q} = {a}", prevTimeout:"Anterior: Sin tiempo · era {a}",
+  linePts:"¡{n} líneas! +{p} (×{x})", step:"Etapa {n}/{m}", need:"Pregunta {n}/{m} · Velocidad ×{s}",
+  win:"¡Nivel completado!", winText:"Acertaste {c} de {m} preguntas.", fast:"⚡ ¡Rápido! +{f}",
+  pass:"Pasar · quedan {n} (3)", passed:"Pasaste · Tienes el control", prevPass:"Anterior: Pasada · {q} = {a}",
+  lbTitle:"Clasificación", lbNote:"Mejores puntuaciones en este dispositivo. La clasificación con amigos y con todo el mundo llegará con la versión online.",
+  lbEmpty:"Aún no hay puntuaciones. ¡Juega, escribe tu nombre y entra en la lista!", namePh:"Tu nombre", save:"Guardar en la clasificación", saved:"Guardado · estás en el puesto {r}", lbStage:"Etapa {n}", toast:"Etapa {n}: {name}",
+  paused:"En pausa", pausedHint:"Pulsa P o Esc para seguir", cont:"Seguir", menu:"Menú",
+  over:"Fin del juego", newBest:"¡Nuevo récord!", best:"Récord: {n}", summary:"{tier} · Etapa {n} · {l} líneas · {acc}% aciertos",
+  again:"Jugar otra vez", choose:"Elegir nivel", levels:"{n} etapas · {q} preguntas", startInfo:"{tier} · etapa {n}: {name}",
+  pct:p=>`${p}%`,
+  tiers:[
+   ["Primaria","Sumas, restas, tablas de multiplicar y divisiones sencillas.",["Suma","Resta","Tablas de multiplicar","División simple","Mezcla"]],
+   ["Secundaria","Operaciones de varias cifras, multiplicación en cadena, jerarquía, negativos, potencias.",["Suma/resta de dos cifras","Multiplicación en cadena","División","Jerarquía de operaciones","Números negativos","Potencias"]],
+   ["Bachillerato","Cuadrados, cubos, raíces, potencias, porcentajes y paréntesis.",["Cuadrados y cubos","Raíces cuadradas","Operaciones con potencias","Porcentajes","Encuentra el número","Paréntesis"]],
+   ["Universidad","Las cuatro operaciones con números grandes, división larga, potencias y raíces.",["Sumas/restas grandes","Multiplicación grande","División larga","Expresiones con potencias","Raíces y potencias","Cadenas largas"]],
+   ["Doctorado","Multiplicación mental rápida, cuadrados, potencias grandes, porcentajes encadenados, expresiones largas.",["Multiplicación mental","Cuadrados","Potencias grandes","Cadenas de porcentajes","Jerarquía experta","Bases negativas"]],
+   ["Profesor","Para las mentes más rápidas: productos grandes, cuadrados de tres cifras, divisiones grandes, ronda rápida.",["Gran multiplicación mental","Cuadrados de tres cifras","Producto de tres factores","División grande","Potencias y raíces","Ronda rápida"]],
+  ]},
+ ru: {
+  eyebrow:"Считай · Вращай · Ставь",
+  lede:"Учись играя и играй учась. Пока падает каждая фигура, появляется вопрос. Верный ответ даёт управление фигурой. При неверном ответе она падает прямо вниз.",
+  brainTitle:"Мозг работает сразу несколькими отделами",
+  b1t:"Счёт", b1d:"Решаешь задачи в уме: от простого сложения до больших степеней.",
+  b2t:"Пространственное мышление", b2d:"Мысленно вращаешь фигуру и ставишь её в лучшую щель на поле.",
+  b3t:"Быстрые решения", b3d:"Выбираешь верный из двух ответов, пока фигура не упала.",
+  b4t:"Внимание и планирование", b4d:"Решая задачу, держишь в голове пустоты на поле и следующую фигуру.",
+  step1:"1 · Выбери уровень", step2:"2 · Начальный этап", start:"Начать игру",
+  r1t:"Верный ответ", r1d:`Фигура твоя: ${K} сдвиг, ${KU} поворот, ${KD} ускорить, <kbd>Пробел</kbd> сбросить.`,
+  r2t:"Неверный ответ", r2d:"Фигура быстро падает в своём столбце, очков нет, серия обнуляется.",
+  r3t:"Как отвечать", r3d:"Щёлкни, коснись или нажми <kbd>1</kbd> / <kbd>2</kbd>. Если фигура легла раньше, время вышло. У тебя 3 паса: нажми <kbd>3</kbd>, чтобы пропустить вопрос и всё равно управлять фигурой.",
+  r4t:"Этапы и скорость", r4d:"В каждом этапе 20 вопросов (начальная школа — 100, остальные — 120). После каждого вопроса фигуры чуть ускоряются. Отвечаешь быстро и верно — игра ускоряется ещё сильнее, но ты получаешь бонус за скорость. Очки за линии копятся, с множителем уровня: ×1, ×2, ×4, ×6, ×8, ×10.",
+  touchHint:"На поле: касание = поворот · тяни = сдвиг · смахни вниз = сброс",
+  score:"Очки", lines:"Линии", streak:"Серия", next:"Далее", key1:"клавиша 1", key2:"клавиша 2",
+  help:`<kbd>1</kbd>/<kbd>2</kbd> ответ · ${K} сдвиг · ${KU} поворот<br>${KD} ускорить · <kbd>Пробел</kbd> сброс<br><kbd>P</kbd> пауза · <kbd>M</kbd> звук`,
+  pause:"Пауза (P)", resume:"Дальше (P)", soundOn:"Звук: вкл (M)", soundOff:"Звук: выкл (M)", toMenu:"В меню",
+  qLabel:"Вопрос · {lv} · {p} очк.", wait:"Ответь, чтобы управлять фигурой!",
+  ok:"Верно! +{p} · Управляй", okBonus:"Верно! +{p} (+{b} за серию) · Управляй",
+  wrong:"Неверно! Ответ {a}. Фигура падает…", timeout:"Время вышло. Ответ {a}.", nudge:"Сначала верно ответь на вопрос, потом сможешь управлять.",
+  prevOk:"Прошлый: верно · {q} = {a}", prevWrong:"Прошлый: неверно · {q} = {a}", prevTimeout:"Прошлый: время вышло · ответ {a}",
+  linePts:"Линий: {n}! +{p} (×{x})", step:"Этап {n}/{m}", need:"Вопрос {n}/{m} · Скорость ×{s}",
+  win:"Уровень пройден!", winText:"Верных ответов: {c} из {m}.", fast:"⚡ Быстро! +{f}",
+  pass:"Пас · осталось {n} (3)", passed:"Пас · Управляй", prevPass:"Прошлый: пас · {q} = {a}",
+  lbTitle:"Рейтинг", lbNote:"Лучшие результаты на этом устройстве. Рейтинг с друзьями и со всем миром появится в онлайн-версии.",
+  lbEmpty:"Пока нет результатов. Сыграй, введи имя и попади в список!", namePh:"Твоё имя", save:"Сохранить в рейтинг", saved:"Сохранено · ты на {r}-м месте", lbStage:"Этап {n}", toast:"Этап {n}: {name}",
+  paused:"Пауза", pausedHint:"Нажми P или Esc, чтобы продолжить", cont:"Продолжить", menu:"Меню",
+  over:"Игра окончена", newBest:"Новый рекорд!", best:"Рекорд: {n}", summary:"{tier} · Этап {n} · {l} лин. · {acc}% верно",
+  again:"Ещё раз", choose:"Выбрать уровень", levels:"этапов: {n} · вопросов: {q}", startInfo:"{tier} · этап {n}: {name}",
+  pct:p=>`${p}%`,
+  tiers:[
+   ["Начальная школа","Сложение, вычитание, таблица умножения и простое деление.",["Сложение","Вычитание","Таблица умножения","Простое деление","Всё вместе"]],
+   ["Средняя школа","Многозначные числа, цепочки умножений, порядок действий, отрицательные числа, степени.",["Двузначное сложение/вычитание","Цепочка умножений","Деление","Порядок действий","Отрицательные числа","Степени"]],
+   ["Старшая школа","Квадраты, кубы, корни, степени, проценты и скобки.",["Квадраты и кубы","Квадратные корни","Действия со степенями","Проценты","Найди число","Скобки"]],
+   ["Университет","Четыре действия с большими числами, деление столбиком, степени и корни.",["Большие сложение/вычитание","Большое умножение","Деление столбиком","Выражения со степенями","Корни и степени","Длинные цепочки"]],
+   ["Аспирантура","Быстрое устное умножение, квадраты, большие степени, цепочки процентов, длинные выражения.",["Устное умножение","Возведение в квадрат","Большие степени","Цепочки процентов","Порядок действий: эксперт","Отрицательные основания"]],
+   ["Профессор","Для самых быстрых: большие произведения, квадраты трёхзначных, большое деление, скоростной раунд.",["Большое устное умножение","Квадраты трёхзначных","Произведение трёх чисел","Большое деление","Степени и корни","Скоростной раунд"]],
+  ]},
+ de: {
+  eyebrow:"Rechnen · Drehen · Setzen",
+  lede:"Lernen beim Spielen, spielen beim Lernen. Zu jedem fallenden Stein erscheint eine Frage. Mit der richtigen Antwort steuerst du den Stein. Bei einer falschen fällt er senkrecht nach unten.",
+  brainTitle:"Viele Bereiche deines Gehirns arbeiten gleichzeitig",
+  b1t:"Rechnen", b1d:"Du löst Aufgaben im Kopf, von einfacher Addition bis zu großen Potenzen.",
+  b2t:"Räumliches Denken", b2d:"Du drehst den Stein im Kopf und setzt ihn in die beste Lücke.",
+  b3t:"Schnelle Entscheidung", b3d:"Du wählst die richtige von zwei Antworten, bevor der Stein landet.",
+  b4t:"Konzentration und Planung", b4d:"Beim Rechnen behältst du die Lücken und den nächsten Stein im Blick.",
+  step1:"1 · Wähle dein Niveau", step2:"2 · Startstufe", start:"Spiel starten",
+  r1t:"Richtige Antwort", r1d:`Du steuerst den Stein: ${K} bewegen, ${KU} drehen, ${KD} schneller, <kbd>Leertaste</kbd> fallen lassen.`,
+  r2t:"Falsche Antwort", r2d:"Der Stein fällt schnell in seiner Spalte, keine Punkte, die Serie beginnt neu.",
+  r3t:"Antworten", r3d:"Klicke, tippe oder drücke <kbd>1</kbd> / <kbd>2</kbd>. Landet der Stein vorher, ist die Zeit um. Du hast 3 Joker: Mit <kbd>3</kbd> überspringst du eine Frage und steuerst den Stein trotzdem.",
+  r4t:"Stufen und Tempo", r4d:"Jede Stufe hat 20 Fragen (Grundschule 100, andere Niveaus 120). Nach jeder Frage werden die Steine etwas schneller. Antwortest du schnell und richtig, wird es noch schneller, aber du bekommst einen Tempo-Bonus. Reihenpunkte summieren sich, mit Niveau-Multiplikator: ×1, ×2, ×4, ×6, ×8, ×10.",
+  touchHint:"Auf dem Feld: tippen = drehen · ziehen = bewegen · nach unten wischen = fallen lassen",
+  score:"Punkte", lines:"Reihen", streak:"Serie", next:"Nächster", key1:"Taste 1", key2:"Taste 2",
+  help:`<kbd>1</kbd>/<kbd>2</kbd> antworten · ${K} bewegen · ${KU} drehen<br>${KD} schneller · <kbd>Leertaste</kbd> fallen<br><kbd>P</kbd> Pause · <kbd>M</kbd> Ton`,
+  pause:"Pause (P)", resume:"Weiter (P)", soundOn:"Ton: an (M)", soundOff:"Ton: aus (M)", toMenu:"Zum Menü",
+  qLabel:"Frage · {lv} · {p} Pkt.", wait:"Antworte, um den Stein zu steuern!",
+  ok:"Richtig! +{p} · Du steuerst", okBonus:"Richtig! +{p} (+{b} Serie) · Du steuerst",
+  wrong:"Falsch! Richtig war {a}. Der Stein fällt…", timeout:"Zeit um. Richtig war {a}.", nudge:"Beantworte zuerst die Frage richtig, dann kannst du steuern.",
+  prevOk:"Zuletzt: richtig · {q} = {a}", prevWrong:"Zuletzt: falsch · {q} = {a}", prevTimeout:"Zuletzt: Zeit um · Antwort {a}",
+  linePts:"{n} Reihen! +{p} (×{x})", step:"Stufe {n}/{m}", need:"Frage {n}/{m} · Tempo ×{s}",
+  win:"Niveau geschafft!", winText:"Du hast {c} von {m} Fragen richtig.", fast:"⚡ Schnell! +{f}",
+  pass:"Joker · noch {n} (3)", passed:"Joker gesetzt · Du steuerst", prevPass:"Zuletzt: Joker · {q} = {a}",
+  lbTitle:"Bestenliste", lbNote:"Die besten Ergebnisse auf diesem Gerät. Ranglisten mit Freunden und weltweit kommen mit der Online-Version.",
+  lbEmpty:"Noch keine Ergebnisse. Spiel eine Runde, gib deinen Namen ein und komm auf die Liste!", namePh:"Dein Name", save:"In Bestenliste speichern", saved:"Gespeichert · du bist auf Platz {r}", lbStage:"Stufe {n}", toast:"Stufe {n}: {name}",
+  paused:"Pausiert", pausedHint:"P oder Esc zum Fortsetzen", cont:"Weiter", menu:"Menü",
+  over:"Spiel vorbei", newBest:"Neuer Rekord!", best:"Rekord: {n}", summary:"{tier} · Stufe {n} · {l} Reihen · {acc}% richtig",
+  again:"Nochmal spielen", choose:"Niveau wählen", levels:"{n} Stufen · {q} Fragen", startInfo:"{tier} · Stufe {n}: {name}",
+  pct:p=>`${p} %`,
+  tiers:[
+   ["Grundschule","Plus, Minus, Einmaleins und einfache Division.",["Addition","Subtraktion","Einmaleins","Einfache Division","Gemischt"]],
+   ["Mittelstufe","Mehrstellige Zahlen, Kettenmultiplikation, Punkt vor Strich, negative Zahlen, Potenzen.",["Zweistellig plus/minus","Kettenmultiplikation","Division","Punkt vor Strich","Negative Zahlen","Potenzen"]],
+   ["Oberstufe","Quadrate, Kubikzahlen, Wurzeln, Potenzen, Prozente und Klammern.",["Quadrat- und Kubikzahlen","Quadratwurzeln","Rechnen mit Potenzen","Prozente","Fehlende Zahl","Klammern"]],
+   ["Universität","Grundrechenarten mit großen Zahlen, lange Division, Potenzen und Wurzeln.",["Große Plus/Minus","Große Multiplikation","Lange Division","Potenzausdrücke","Wurzeln und Potenzen","Lange Rechenketten"]],
+   ["Promotion","Schnelles Kopfrechnen, Quadrate, große Potenzen, Prozentketten, lange Ausdrücke.",["Kopfrechnen","Quadrieren","Große Potenzen","Prozentketten","Punkt vor Strich: Profi","Negative Basen"]],
+   ["Professor","Für die schnellsten Köpfe: große Produkte, dreistellige Quadrate, große Divisionen, Tempo-Runde.",["Großes Kopfrechnen","Dreistellige Quadrate","Drei Faktoren","Große Division","Potenzen und Wurzeln","Tempo-Runde"]],
+  ]},
+ fr: {
+  eyebrow:"Calcule · Tourne · Place",
+  lede:"Apprends en jouant, joue en apprenant. À chaque pièce qui tombe, une question apparaît. Une bonne réponse te donne le contrôle de la pièce. Une mauvaise la fait tomber tout droit.",
+  brainTitle:"Plusieurs zones du cerveau travaillent en même temps",
+  b1t:"Calcul", b1d:"Tu résous les questions de tête, de l'addition jusqu'aux grandes puissances.",
+  b2t:"Pensée spatiale", b2d:"Tu fais tourner la pièce dans ta tête et la places dans le meilleur trou.",
+  b3t:"Décision rapide", b3d:"Tu choisis la bonne réponse parmi deux avant que la pièce ne touche le sol.",
+  b4t:"Attention et planification", b4d:"Pendant le calcul, tu gardes en tête les trous du plateau et la pièce suivante.",
+  step1:"1 · Choisis ton niveau", step2:"2 · Étape de départ", start:"Commencer",
+  r1t:"Bonne réponse", r1d:`Tu contrôles la pièce : ${K} déplacer, ${KU} tourner, ${KD} accélérer, <kbd>Espace</kbd> lâcher.`,
+  r2t:"Mauvaise réponse", r2d:"La pièce tombe vite dans sa colonne, pas de points, la série repart à zéro.",
+  r3t:"Répondre", r3d:"Clique, touche ou appuie sur <kbd>1</kbd> / <kbd>2</kbd>. Si la pièce se pose avant, le temps est écoulé. Tu as 3 jokers : appuie sur <kbd>3</kbd> pour passer une question et garder le contrôle de la pièce.",
+  r4t:"Étapes et vitesse", r4d:"Chaque étape compte 20 questions (Primaire 100, autres niveaux 120). Les pièces accélèrent un peu après chaque question. Si tu réponds vite et juste, le jeu accélère encore, mais tu gagnes un bonus de vitesse. Les points de lignes s'additionnent, avec un multiplicateur par niveau : ×1, ×2, ×4, ×6, ×8, ×10.",
+  touchHint:"Sur le plateau : toucher = tourner · glisser = déplacer · balayer vers le bas = lâcher",
+  score:"Score", lines:"Lignes", streak:"Série", next:"Suivante", key1:"touche 1", key2:"touche 2",
+  help:`<kbd>1</kbd>/<kbd>2</kbd> répondre · ${K} déplacer · ${KU} tourner<br>${KD} accélérer · <kbd>Espace</kbd> lâcher<br><kbd>P</kbd> pause · <kbd>M</kbd> son`,
+  pause:"Pause (P)", resume:"Reprendre (P)", soundOn:"Son : oui (M)", soundOff:"Son : non (M)", toMenu:"Retour au menu",
+  qLabel:"Question · {lv} · {p} pts", wait:"Réponds pour diriger la pièce !",
+  ok:"Correct ! +{p} · À toi de jouer", okBonus:"Correct ! +{p} (+{b} série) · À toi de jouer",
+  wrong:"Faux ! C'était {a}. La pièce tombe…", timeout:"Temps écoulé. C'était {a}.", nudge:"Réponds d'abord correctement, ensuite tu pourras diriger.",
+  prevOk:"Précédente : juste · {q} = {a}", prevWrong:"Précédente : faux · {q} = {a}", prevTimeout:"Précédente : temps écoulé · réponse {a}",
+  linePts:"{n} lignes ! +{p} (×{x})", step:"Étape {n}/{m}", need:"Question {n}/{m} · Vitesse ×{s}",
+  win:"Niveau terminé !", winText:"Tu as répondu juste à {c} questions sur {m}.", fast:"⚡ Rapide ! +{f}",
+  pass:"Joker · reste {n} (3)", passed:"Joker utilisé · À toi de jouer", prevPass:"Précédente : joker · {q} = {a}",
+  lbTitle:"Classement", lbNote:"Les meilleurs scores sur cet appareil. Le classement entre amis et mondial arrivera avec la version en ligne.",
+  lbEmpty:"Pas encore de score. Joue une partie, écris ton nom et entre dans la liste !", namePh:"Ton nom", save:"Enregistrer au classement", saved:"Enregistré · tu es {r}e", lbStage:"Étape {n}", toast:"Étape {n} : {name}",
+  paused:"Pause", pausedHint:"Appuie sur P ou Échap pour reprendre", cont:"Reprendre", menu:"Menu",
+  over:"Partie terminée", newBest:"Nouveau record !", best:"Record : {n}", summary:"{tier} · Étape {n} · {l} lignes · {acc} % juste",
+  again:"Rejouer", choose:"Choisir le niveau", levels:"{n} étapes · {q} questions", startInfo:"{tier} · étape {n} : {name}",
+  pct:p=>`${p} %`,
+  tiers:[
+   ["Primaire","Additions, soustractions, tables de multiplication et divisions simples.",["Addition","Soustraction","Tables de multiplication","Division simple","Mélange"]],
+   ["Collège","Calculs à plusieurs chiffres, multiplications en chaîne, priorités, négatifs, puissances.",["Addition/soustraction à deux chiffres","Multiplication en chaîne","Division","Priorité des opérations","Nombres négatifs","Puissances"]],
+   ["Lycée","Carrés, cubes, racines, puissances, pourcentages et parenthèses.",["Carrés et cubes","Racines carrées","Calculs avec puissances","Pourcentages","Nombre manquant","Parenthèses"]],
+   ["Université","Les quatre opérations avec de grands nombres, division longue, puissances et racines.",["Grandes additions/soustractions","Grande multiplication","Division longue","Expressions avec puissances","Racines et puissances","Longues chaînes"]],
+   ["Doctorat","Calcul mental rapide, carrés, grandes puissances, pourcentages en chaîne, longues expressions.",["Multiplication mentale","Carrés","Grandes puissances","Chaînes de pourcentages","Priorités : expert","Bases négatives"]],
+   ["Professeur","Pour les esprits les plus rapides : grands produits, carrés à trois chiffres, grandes divisions, tour rapide.",["Grande multiplication mentale","Carrés à trois chiffres","Produit de trois facteurs","Grande division","Puissances et racines","Tour rapide"]],
+  ]},
+};
+
+/* ================= Yardımcılar ================= */
+const ri = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const SUP = {"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻"};
+const sup = n => String(n).split("").map(c => SUP[c] || c).join("");
+const neg = n => n < 0 ? `(−${-n})` : `${n}`;          // negatif sayıyı parantezle yaz
+const sgn = n => n < 0 ? `− ${-n}` : `+ ${n}`;          // "+ 3" / "− 3"
+const fmt = n => n < 0 ? `−${-n}` : `${n}`;
+const nz = (a, b) => { let v; do v = ri(a, b); while (v === 0); return v; };
+const tpl = (s, o) => s.replace(/\{(\w+)\}/g, (_, k) => o[k] ?? "");
+
+// Yanlış şık: doğru cevaba yakın ama farklı, mantıklı bir sayı.
+function makeWrong(ans, allowNeg) {
+  const mag = Math.abs(ans);
+  const step = mag < 20 ? 1 : mag < 200 ? pick([1, 2, 10]) : Math.max(1, Math.round(mag * 0.03));
+  for (let t = 0; t < 30; t++) {
+    let w = ans + (Math.random() < .5 ? -1 : 1) * step * ri(1, 3);
+    if (!allowNeg && ans >= 0 && w < 0) w = ans + step * ri(1, 3);
+    if (w !== ans) return w;
+  }
+  return ans + 1;
+}
+// Soru nesnesi: html = gösterilecek ifade, ans = doğru cevap. "?" içermeyen ifadelere " = ?" eklenir.
+const Q = (html, ans, o = {}) => ({ html, ans, wrong: o.wrong ?? makeWrong(ans, o.neg ?? ans < 0) });
+
+/* ================= Seviyeler ================= */
+// Her eğitim seviyesi (tier) bölümlerden oluşur; her bölüm 200 puanda atlanır.
+// speed: ms/satır (bölüm başına %8 hızlanır), think: soru aşamasında düşüşü yavaşlatan çarpan.
+// Sözel metinler (isimler, açıklamalar) I18N tablosundan gelir; T() aktif dili verir.
+const TIERS = [
+ { id:"ilk", mult:1, sample:"3 + 2 = ?", speed:900, think:1.0, levels:[
+   () => { const a=ri(1,9), b=ri(1,9); return Q(`${a} + ${b}`, a+b); },
+   () => { const a=ri(5,20), b=ri(1,a); return Q(`${a} − ${b}`, a-b); },
+   () => { const a=ri(2,9), b=ri(2,9); return Q(`${a} × ${b}`, a*b); },
+   () => { const b=ri(2,9), q=ri(2,9); return Q(`${b*q} ÷ ${b}`, q); },
+   () => pick([
+       () => { const a=ri(10,50), b=ri(10,49); return Q(`${a} + ${b}`, a+b); },
+       () => { const a=ri(30,99), b=ri(10,a); return Q(`${a} − ${b}`, a-b); },
+       () => { const a=ri(2,10), b=ri(2,10); return Q(`${a} × ${b}`, a*b); },
+       () => { const b=ri(2,10), q=ri(2,10); return Q(`${b*q} ÷ ${b}`, q); },
+     ])(),
+ ]},
+ { id:"orta", mult:2, sample:"12 × 2 × 8 × 3 = ?", speed:820, think:1.15, levels:[
+   () => Math.random()<.5
+       ? (() => { const a=ri(20,99), b=ri(20,99); return Q(`${a} + ${b}`, a+b); })()
+       : (() => { const a=ri(50,199), b=ri(11,a); return Q(`${a} − ${b}`, a-b); })(),
+   () => { const n=ri(3,4), f=[ri(2,12)]; while (f.length<n) f.push(ri(2,n===3?8:5)); return Q(f.join(" × "), f.reduce((x,y)=>x*y,1)); },
+   () => { const b=ri(3,9), q=ri(12,99); return Q(`${b*q} ÷ ${b}`, q); },
+   () => { const a=ri(2,15), b=ri(2,9), c=ri(2,9); return pick([
+       Q(`${a} + ${b} × ${c}`, a+b*c), Q(`(${a} + ${b}) × ${c}`, (a+b)*c), Q(`${a} × ${b} − ${c}`, a*b-c), Q(`${a*b} ÷ ${b} + ${c}`, a+c) ]); },
+   () => { const a=nz(-12,12), b=nz(-9,9), c=ri(-20,20); return Q(`${neg(a)} × ${neg(b)} ${sgn(c)}`, a*b+c, {neg:true}); },
+   () => pick([
+       () => { const a=ri(2,15); return Q(`${a}${sup(2)}`, a*a); },
+       () => { const n=ri(3,10); return Q(`2${sup(n)}`, 2**n); },
+       () => { const a=ri(2,6); return Q(`${a}${sup(3)}`, a**3); },
+     ])(),
+ ]},
+ { id:"lise", mult:4, sample:"√144 + 2⁵ = ?", speed:760, think:1.25, levels:[
+   () => Math.random()<.6 ? (() => { const a=ri(2,20); return Q(`${a}²`, a*a); })() : (() => { const a=ri(2,6); return Q(`${a}³`, a**3); })(),
+   () => Math.random()<.6 ? (() => { const a=ri(2,20); return Q(`√${a*a}`, a); })()
+                          : (() => { const a=ri(2,12), b=ri(2,12); return Q(`√${a*a} + √${b*b}`, a+b); })(),
+   () => pick([
+       () => { const a=ri(2,6), b=ri(2,3); return Q(`2${sup(a)} + 3${sup(b)}`, 2**a + 3**b); },
+       () => { const a=ri(5,15), b=ri(1,a-1); return Q(`${a}² − ${b}²`, a*a-b*b); },
+       () => { const a=ri(2,9), b=ri(2,5); return Q(`${a}² × ${b}`, a*a*b); },
+     ])(),
+   () => { const p=pick([5,10,15,20,25,30,40,50,60,75]), n=pick([20,40,60,80,120,200,240,300,400,500]); const ans=p*n/100;
+           return Number.isInteger(ans) ? Q(`${T().pct(p)} × ${n}`, ans) : Q(`${T().pct(10)} × ${n}`, n/10); },
+   () => pick([   // eksik sayıyı bul: "?" kutusu
+       () => { const x=ri(5,60), b=ri(5,40); return Q(`? + ${b} = ${x+b}`, x); },
+       () => { const x=ri(2,12), b=ri(2,12); return Q(`? × ${b} = ${x*b}`, x); },
+       () => { const x=ri(5,50), d=ri(60,120); return Q(`${d} − ? = ${d-x}`, x); },
+       () => { const q=ri(2,12), b=ri(2,9); return Q(`? ÷ ${b} = ${q}`, q*b); },
+     ])(),
+   () => Math.random()<.5
+       ? (() => { const a=ri(2,15), b=ri(2,15), c=ri(6,15), d=ri(1,c-1); return Q(`(${a} + ${b}) × (${c} − ${d})`, (a+b)*(c-d)); })()
+       : (() => { const a=ri(2,9), b=ri(2,12), c=ri(2,12), d=ri(1,20); return Q(`${a} × (${b} + ${c}) − ${d}`, a*(b+c)-d); })(),
+ ]},
+ { id:"uni", mult:6, sample:"4368 ÷ 8 = ?", speed:720, think:1.4, levels:[
+   () => Math.random()<.5 ? (() => { const a=ri(1000,9999), b=ri(100,999); return Q(`${a} + ${b}`, a+b); })()
+                          : (() => { const a=ri(1000,9999), b=ri(100,999); return Q(`${a} − ${b}`, a-b); })(),
+   () => Math.random()<.5 ? (() => { const a=ri(100,999), b=ri(2,9); return Q(`${a} × ${b}`, a*b); })()
+                          : (() => { const a=ri(21,99), b=ri(11,19); return Q(`${a} × ${b}`, a*b); })(),
+   () => { const d=ri(3,12), q=ri(100,999); return Q(`${d*q} ÷ ${d}`, q); },
+   () => pick([
+       () => { const a=ri(2,5), b=ri(2,10-a); return Q(`2${sup(a)} × 2${sup(b)}`, 2**(a+b)); },
+       () => { const a=ri(2,9), b=ri(2,5); return Q(`${a}² × ${b}²`, a*a*b*b); },
+       () => { const n=ri(2,6); return Q(`10${sup(n)} ÷ 10${sup(n-1)} + ${n}²`, 10 + n*n); },
+     ])(),
+   () => Math.random()<.5 ? (() => { const a=ri(2,15), b=ri(2,5); return Q(`√${a*a} + ${b}³`, a + b**3); })()
+                          : (() => { const a=ri(2,12), b=ri(2,9); return Q(`√${a*a} × ${b}²`, a*b*b); })(),
+   () => { const a=ri(2,12), b=ri(2,12), c=ri(2,12), d=ri(2,12), e=ri(1,20); return Q(`${a} × ${b} + ${c} × ${d} − ${e}`, a*b+c*d-e); },
+ ]},
+ { id:"dr", mult:8, sample:"47² = ?", speed:680, think:1.6, levels:[
+   () => { const a=ri(13,49), b=ri(11,19); return Q(`${a} × ${b}`, a*b, {wrong: a*b + pick([-10,10,-20,20])}); },
+   () => { const a=ri(21,99); return Q(`${a}²`, a*a, {wrong: a*a + pick([-10,10,-20,20,100,-100])}); },
+   () => pick([
+       () => { const n=ri(6,14); return Q(`2${sup(n)}`, 2**n); },
+       () => { const n=ri(4,7); return Q(`3${sup(n)}`, 3**n); },
+       () => { const n=ri(3,5); return Q(`5${sup(n)}`, 5**n); },
+     ])(),
+   () => { const p=pick([10,20,25,50]), n=pick([120,240,360,400,480,600]), q=pick([10,20,50]), m=pick([150,200,300,500]);
+           return Q(`${T().pct(p)} × ${n} + ${T().pct(q)} × ${m}`, p*n/100 + q*m/100); },
+   () => { const a=ri(3,15), b=ri(3,12), d=ri(2,9), k=ri(2,12), e=ri(1,30); return Q(`${a} × ${b} − ${d*k} ÷ ${d} + ${e}`, a*b - k + e, {neg:true}); },
+   () => { const a=ri(2,5), n=ri(2,4), b=ri(1,20); return Q(`(−${a})${sup(n)} + ${b}`, (-a)**n + b, {neg:true}); },
+ ]},
+ { id:"prof", mult:10, sample:"998² = ?", speed:560, think:1.5, levels:[
+   () => { const a=ri(13,99), b=ri(13,99); return Q(`${a} × ${b}`, a*b, {wrong: a*b + pick([-10,10,-20,20,100,-100])}); },
+   () => { const a=pick([ri(101,115), ri(985,999), ri(191,209)]); return Q(`${a}²`, a*a, {wrong: a*a + pick([-10,10,100,-100,2*a])}); },
+   () => { const a=pick([25,50,125]), b=ri(2,16), c=ri(3,9); return Q(`${a} × ${b} × ${c}`, a*b*c, {wrong: a*b*c + pick([-a,a,-100,100])}); },
+   () => { const d=ri(11,25), q=ri(100,999); return Q(`${d*q} ÷ ${d}`, q); },
+   () => { const a=ri(2,15), b=ri(2,9), c=ri(2,5); return Q(`√${a*a} × ${b}² + ${c}³`, a*b*b + c**3); },
+   () => pick([...TIERS_PROF_MIX()])(),
+ ]},
+];
+// Hız turu: doktora ve profesör konularından karışık
+function TIERS_PROF_MIX() { return [...TIERS[4].levels, ...TIERS[5].levels.slice(0, 5)]; }
+const QPER = 20;   // her bölüm 20 soru: İlkokul 5 × 20 = 100, diğer seviyeler 6 × 20 = 120
+
+/* ================= Dil durumu ================= */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+let lang = store.get("mt_lang", null);
+if (!I18N[lang]) { const nav = (navigator.language || "tr").slice(0, 2).toLowerCase(); lang = I18N[nav] ? nav : "tr"; }
+const T = () => I18N[lang];
+const tierName = i => T().tiers[i][0];
+const levelName = (i, l) => T().tiers[i][2][l];
+
+/* ================= Parçalar ================= */
+const COLS = 10, ROWS = 20;
+const SHAPES = {
+  I:{c:"#3ee0f0", m:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]]},
+  O:{c:"#ffd34e", m:[[1,1],[1,1]]},
+  T:{c:"#c07cff", m:[[0,1,0],[1,1,1],[0,0,0]]},
+  S:{c:"#4ee08a", m:[[0,1,1],[1,1,0],[0,0,0]]},
+  Z:{c:"#ff5c7a", m:[[1,1,0],[0,1,1],[0,0,0]]},
+  J:{c:"#4f7dff", m:[[1,0,0],[1,1,1],[0,0,0]]},
+  L:{c:"#ff9a3c", m:[[0,0,1],[1,1,1],[0,0,0]]},
+};
+const rotate = m => m[0].map((_, i) => m.map(r => r[i]).reverse());
+
+/* ================= Oyun durumu ================= */
+const $ = id => document.getElementById(id);
+let tierIdx = store.get("mt_tier", 0), startLevel = 0;
+if (!(tierIdx >= 0 && tierIdx < TIERS.length)) tierIdx = 0;
+let G = null;            // aktif oyun
+let muted = store.get("mt_muted", false);
+
+function newGame() {
+  G = {
+    tierIdx, tier: TIERS[tierIdx], level: startLevel, startLevel, done: 0,
+    grid: Array.from({length: ROWS}, () => Array(COLS).fill(null)),
+    score: 0, lines: 0, streak: 0, correct: 0, asked: 0,
+    boost: 1,                // hızlı ve doğru cevaplarla küçülür (oyun hızlanır), hatalarda geri gevşer
+    passes: 3,               // pas hakkı: soruyu geçer, parça yine oyuncunun kontrolüne geçer
+    piece: null, next: randomPiece(),
+    mode: "question",        // question | control | plunge
+    q: null, qOrder: [0,1], answered: false,
+    acc: 0, state: "playing", spawnRow: 0, plungeY: 0,
+    lockT: 0, lockResets: 0, // yere değince kısa kayma payı (lock delay)
+    flash: [], parts: [], trails: [],  // görsel efektler
+  };
+  spawn();
+}
+let bag = [];
+function randomPiece() {   // 7'li torba: her parça eşit sıklıkta gelir
+  if (!bag.length) bag = Object.keys(SHAPES).sort(() => Math.random() - .5);
+  const k = bag.pop();
+  return { k, m: SHAPES[k].m.map(r => r.slice()), c: SHAPES[k].c };
+}
+
+function spawn() {
+  if (G.done >= totalQ()) { gameOver(true); return; }   // tüm sorular bitti: seviye tamamlandı
+  const p = G.next; G.next = randomPiece();
+  p.x = Math.floor((COLS - p.m[0].length) / 2);
+  p.y = p.k === "I" ? -1 : 0;
+  G.piece = p; G.acc = 0; G.spawnRow = p.y; G.lockT = 0; G.lockResets = 0;
+  if (collides(p.m, p.x, p.y)) { gameOver(); return; }
+  newQuestion();
+  drawNext();
+}
+
+function newQuestion() {
+  const gen = G.tier.levels[G.level];
+  let q, tries = 0;
+  do { q = gen(); tries++; } while ((q.wrong === q.ans || !Number.isFinite(q.ans)) && tries < 20);
+  if (q.wrong === q.ans) q.wrong = q.ans + 1;
+  G.q = q; G.answered = false; G.mode = "question"; G.asked++;
+  G.qOrder = Math.random() < .5 ? [q.ans, q.wrong] : [q.wrong, q.ans];
+  for (let i = 0; i < 2; i++) {
+    const b = $("opt" + i); b.disabled = false; b.className = "opt";
+    b.firstElementChild.textContent = fmt(G.qOrder[i]);
+  }
+  $("qcard").className = "qcard";
+  renderQuestion();
+  setStatus("wait", T().wait);
+  updatePass();
+}
+function updatePass() {
+  const b = $("passBtn");
+  b.textContent = tpl(T().pass, { n: G.passes });
+  b.disabled = G.passes <= 0 || G.answered || G.state !== "playing";
+}
+function usePass() {
+  if (!G || G.state !== "playing" || G.answered || G.mode !== "question" || G.passes <= 0) return;
+  G.passes--; G.answered = true;
+  document.activeElement?.blur?.();
+  $("opt0").disabled = $("opt1").disabled = true;
+  $("opt" + G.qOrder.indexOf(G.q.ans)).classList.add("right");
+  $("prev").textContent = tpl(T().prevPass, { q: plainQ(G.q), a: fmt(G.q.ans) });
+  G.mode = "control";
+  $("qcard").className = "qcard ok";
+  setStatus("ok", T().passed);
+  beep(440, .08);
+  updatePass();
+  questionDone();
+}
+const qHtml = q => q.html.includes("?") ? q.html : q.html + " = ?";
+function renderQuestion() {
+  $("qtext").innerHTML = qHtml(G.q);
+  $("qLabel").textContent = tpl(T().qLabel, { lv: levelName(G.tierIdx, G.level), p: pointsFor() });
+}
+// Seviye çarpanı: İlkokul ×1, Ortaokul ×2, Lise ×4, Üniversite ×6, Doktora ×8, Profesör ×10. Soru ve satır puanlarına uygulanır.
+const mult = () => G.tier.mult;
+const pointsFor = () => 10 * (G.level + 1) * mult();     // İlkokul: 1. bölüm 10, 5. bölüm 50 puan
+const totalQ = () => (G.tier.levels.length - G.startLevel) * QPER;
+const plainQ = q => q.html.replace(/<small>.*?<\/small>/g, "").replace(/<br>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").replace(/\s*=\s*\?\s*$/, "").trim();
+
+function answer(i) {
+  if (!G || G.state !== "playing" || G.answered || G.mode !== "question") return;
+  G.answered = true;
+  document.activeElement?.blur?.();   // boşluk tuşu odaklı butonu tetiklemesin
+  const ok = G.qOrder[i] === G.q.ans, right = G.qOrder.indexOf(G.q.ans);
+  $("opt0").disabled = $("opt1").disabled = true;
+  $("opt" + right).classList.add("right");
+  if (!ok) $("opt" + i).classList.add("wrong");
+  $("prev").textContent = tpl(ok ? T().prevOk : T().prevWrong, { q: plainQ(G.q), a: fmt(G.q.ans) });
+  if (ok) {
+    G.streak++; G.correct++;
+    // Hızlı cevap: parça düşüş yolunun ilk %35'indeyken doğru bilindi. Oyun hızlanır, bonus puan gelir.
+    const pc = G.piece; let gy = pc.y; while (!collides(pc.m, pc.x, gy + 1)) gy++;
+    const fast = (pc.y - G.spawnRow) / Math.max(1, gy - G.spawnRow) < .35;
+    const p = pointsFor(), b = 2 * Math.min(G.streak - 1, 5) * mult(), f = fast ? Math.round(p / 2) : 0;
+    if (fast) G.boost = Math.max(.5, G.boost * .965);
+    addScore(p + b + f);
+    G.mode = "control";
+    $("qcard").className = "qcard ok";
+    setStatus("ok", tpl(b ? T().okBonus : T().ok, { p, b }) + (f ? " · " + tpl(T().fast, { f }) : ""));
+    beep(660, .08); setTimeout(() => beep(880, .1), 80);
+  } else {
+    G.streak = 0; G.boost = Math.min(1, G.boost * 1.06);
+    G.mode = "plunge"; G.acc = 0; G.plungeY = G.piece.y;
+    held.clear();
+    $("qcard").className = "qcard no";
+    setStatus("no", tpl(T().wrong, { a: fmt(G.q.ans) }));
+    beep(200, .25, "sawtooth");
+  }
+  updatePass();
+  questionDone();
+}
+
+function timeoutQuestion() {
+  if (G.answered) return;
+  G.answered = true; G.streak = 0; G.boost = Math.min(1, G.boost * 1.06);
+  $("prev").textContent = tpl(T().prevTimeout, { a: fmt(G.q.ans) });
+  $("opt0").disabled = $("opt1").disabled = true;
+  $("opt" + G.qOrder.indexOf(G.q.ans)).classList.add("right");
+  $("qcard").className = "qcard no";
+  setStatus("no", tpl(T().timeout, { a: fmt(G.q.ans) }));
+  updatePass();
+  questionDone();
+}
+
+function setStatus(cls, txt) { const s = $("status"); s.className = "status " + cls; s.textContent = txt; }
+
+function addScore(n) { G.score += n; updateHud(); }
+// Her cevaplanan (ya da süresi dolan) soru ilerlemeyi bir adım artırır; 20 soruda bir sonraki bölüme geçilir.
+function questionDone() {
+  G.done++;
+  const lv = Math.min(G.tier.levels.length - 1, G.startLevel + Math.floor(G.done / QPER));
+  if (lv !== G.level && G.done < totalQ()) {
+    G.level = lv;
+    toast(tpl(T().toast, { n: G.level + 1, name: levelName(G.tierIdx, G.level) }));
+    beep(523, .1); setTimeout(() => beep(659, .1), 110); setTimeout(() => beep(784, .16), 220);
+  }
+  updateHud();
+}
+
+/* ================= Hareket ================= */
+function collides(m, x, y) {
+  for (let r = 0; r < m.length; r++) for (let c = 0; c < m[r].length; c++) {
+    if (!m[r][c]) continue;
+    const nx = x + c, ny = y + r;
+    if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
+    if (ny >= 0 && G.grid[ny][nx]) return true;
+  }
+  return false;
+}
+// Yerdeyken yapılan her hareket kilit sayacını sıfırlar (en fazla 15 kez): klasik "kayma payı".
+function resetLock() { if (G.lockResets < 15) { G.lockT = 0; G.lockResets++; } }
+function tryMove(dx, dy) {
+  const p = G.piece;
+  if (!collides(p.m, p.x + dx, p.y + dy)) { p.x += dx; p.y += dy; if (dy) G.lockT = 0; else resetLock(); return true; }
+  return false;
+}
+function tryRotate() {
+  const p = G.piece, m = rotate(p.m);
+  for (const [kx, ky] of [[0,0],[-1,0],[1,0],[-2,0],[2,0],[0,-1]]) if (!collides(m, p.x + kx, p.y + ky)) { p.m = m; p.x += kx; p.y += ky; resetLock(); beep(520, .03); return true; }
+  return false;
+}
+function lockPiece() {
+  const p = G.piece;
+  let above = false;
+  p.m.forEach((row, r) => row.forEach((v, c) => {
+    if (!v) return;
+    const y = p.y + r;
+    if (y < 0) above = true; else G.grid[y][p.x + c] = p.c;
+  }));
+  if (G.mode === "question") timeoutQuestion();
+  held.delete("down");
+  beep(140, .05, "square");
+  if (above) { gameOver(); return; }
+  clearLines();
+  spawn();
+}
+function clearLines() {
+  const full = [];
+  for (let r = 0; r < ROWS; r++) if (G.grid[r].every(Boolean)) full.push(r);
+  if (!full.length) return;
+  for (const r of full) for (let c = 0; c < COLS; c++) for (let k = 0; k < 3; k++)
+    G.parts.push({ x: (c + .5) * CELL, y: (r + .5) * CELL, vx: (Math.random() - .5) * .5, vy: -Math.random() * .45 - .1, c: G.grid[r][c], t: 600 + Math.random() * 300, s: CELL * (.18 + Math.random() * .2) });
+  for (const r of full) { G.grid.splice(r, 1); G.grid.unshift(Array(COLS).fill(null)); }
+  G.lines += full.length;
+  G.flash = full.map(r => ({ r, t: 300 }));
+  const pts = [0, 20, 50, 120, 300][full.length] * (1 + G.level * .25) * mult() | 0;
+  addScore(pts);
+  toast(tpl(T().linePts, { n: full.length, p: pts, x: mult() }));
+  beep(990, .12); setTimeout(() => beep(1320, .12), 90);
+}
+function addTrail(fromY) {
+  const p = G.piece, cols = new Set();
+  p.m.forEach(row => row.forEach((v, c) => { if (v) cols.add(p.x + c); }));
+  if (p.y > fromY) G.trails.push({ cols: [...cols], y0: Math.max(0, fromY), y1: p.y + p.m.length, c: p.c, t: 220 });
+}
+function hardDrop() {
+  const y0 = G.piece.y;
+  let n = 0; while (tryMove(0, 1)) n++;
+  addTrail(y0);
+  if (n) addScore(Math.min(n, 20) >> 1);
+  lockPiece();
+}
+// Hız: her sorudan sonra %1,4 hızlanır (100 soruda ~4 kat); hızlı ve doğru cevaplar (boost) ayrıca hızlandırır.
+// En hızlı 110 ms/satır. Böylece kolay sorularda bile usta oyuncular sonunda zorlanır. Soru aşamasında
+// okumaya süre kalsın diye düşüş "think" ile yavaşlatılır, ama en az 260 ms/satır olur.
+const gravity = () => Math.max(110, G.tier.speed * Math.pow(.986, G.done + G.startLevel * QPER) * G.boost);
+const questionGravity = () => Math.max(260, gravity() * G.tier.think);
+const LOCK_DELAY = 500;
+
+/* ================= Girdi ================= */
+function act(a) {
+  if (!G || G.state !== "playing") return;
+  if (G.mode !== "control") { if (G.mode === "question") nudgeStatus(); return; }
+  if (a === "left") tryMove(-1, 0);
+  else if (a === "right") tryMove(1, 0);
+  else if (a === "rot") tryRotate();
+  else if (a === "down") { if (tryMove(0, 1)) { G.acc = 0; addScore(1); } else G.lockT = LOCK_DELAY; }
+  else if (a === "drop") hardDrop();
+}
+let nudgeT = 0;
+function nudgeStatus() {
+  const now = performance.now(); if (now - nudgeT < 600) return; nudgeT = now;
+  setStatus("wait", T().nudge);
+  $("status").animate?.([{transform:"translateX(-4px)"},{transform:"translateX(4px)"},{transform:"none"}], {duration:200});
+}
+// Basılı tutunca tekrar (DAS/ARR): ilk gecikme 170 ms, sonra 50 ms'de bir (aşağı için 35 ms).
+const held = new Map();
+const REPEAT = { left: 50, right: 50, down: 35 };
+function holdStart(a) { act(a); if (REPEAT[a]) held.set(a, { t: 0, das: true }); }
+function holdEnd(a) { held.delete(a); }
+function holdTick(dt) {
+  for (const [a, h] of held) {
+    h.t += dt;
+    if (h.das ? h.t >= 170 : h.t >= REPEAT[a]) { h.t = 0; h.das = false; act(a); }
+  }
+}
+const KEYMAP = { ArrowLeft: "left", ArrowRight: "right", ArrowDown: "down", ArrowUp: "rot", x: "rot", X: "rot", " ": "drop" };
+const inGame = () => !$("game").classList.contains("hidden");
+document.addEventListener("keydown", e => {
+  if (!G || !inGame() || e.target.tagName === "INPUT") return;   // isim yazarken oyun tuşları çalışmasın
+  const k = e.key;
+  if (k in KEYMAP) e.preventDefault();
+  if (e.repeat) return;                       // tekrarı kendimiz yönetiyoruz
+  if (k === "p" || k === "P" || k === "Escape") { togglePause(); return; }
+  if (k === "m" || k === "M") { toggleMute(); return; }
+  if (G.state !== "playing") return;
+  if (k === "1" || e.code === "Numpad1") answer(0);
+  else if (k === "2" || e.code === "Numpad2") answer(1);
+  else if (k === "3" || e.code === "Numpad3") usePass();
+  else if (k in KEYMAP) holdStart(KEYMAP[k]);
+});
+document.addEventListener("keyup", e => {
+  if (e.key in KEYMAP) holdEnd(KEYMAP[e.key]);
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === " " && inGame() && $("overlay").classList.contains("hidden")) e.preventDefault();
+});
+addEventListener("blur", () => held.clear());
+$("opt0").addEventListener("click", () => answer(0));
+$("opt1").addEventListener("click", () => answer(1));
+$("passBtn").addEventListener("click", usePass);
+
+// Dokunmatik butonlar: basılı tutulabilir
+$("touch").addEventListener("pointerdown", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  e.preventDefault(); ensureAudio();
+  if (b.dataset.a === "pause") { togglePause(); return; }
+  holdStart(b.dataset.a);
+  const end = () => { holdEnd(b.dataset.a); ["pointerup","pointercancel","pointerleave"].forEach(ev => b.removeEventListener(ev, end)); };
+  ["pointerup","pointercancel","pointerleave"].forEach(ev => b.addEventListener(ev, end));
+});
+$("touch").addEventListener("contextmenu", e => e.preventDefault());
+
+// Tahtada hareketler: dokun = döndür, sağa/sola sürükle = kaydır, yavaş aşağı = hızlandır, hızlı aşağı fırlat = bırak
+let sw = null;
+$("board").addEventListener("pointerdown", e => {
+  if (!G || G.state !== "playing") return;
+  e.preventDefault(); ensureAudio();
+  try { $("board").setPointerCapture(e.pointerId); } catch {}
+  sw = { x0: e.clientX, y0: e.clientY, t0: performance.now(), mx: 0, my: 0, moved: false };
+});
+$("board").addEventListener("pointermove", e => {
+  if (!sw) return;
+  const step = CELL * .9, dx = e.clientX - sw.x0, dy = e.clientY - sw.y0;
+  if (Math.abs(dx) > 8 || Math.abs(dy) > 8) sw.moved = true;
+  const cx = Math.trunc(dx / step);
+  while (sw.mx < cx) { act("right"); sw.mx++; }
+  while (sw.mx > cx) { act("left"); sw.mx--; }
+  const cy = Math.max(0, Math.trunc(dy / step));
+  if (Math.abs(dy) > Math.abs(dx)) while (sw.my < cy) { act("down"); sw.my++; }
+});
+$("board").addEventListener("pointerup", e => {
+  if (!sw) return;
+  const dt = performance.now() - sw.t0, dy = e.clientY - sw.y0, dx = e.clientX - sw.x0;
+  if (!sw.moved && dt < 300) act("rot");
+  else if (dy > CELL * 2.5 && dt < 260 && dy > Math.abs(dx) * 2) act("drop");
+  sw = null;
+});
+$("board").addEventListener("pointercancel", () => { sw = null; });
+
+/* ================= Çizim ================= */
+const cv = $("board"), ctx = cv.getContext("2d");
+const nv = $("next"), nctx = nv.getContext("2d");
+let CELL = 32;
+function resize() {
+  const narrow = innerWidth <= 720;
+  let reserved = 40;
+  if (narrow) {   // telefonda soru paneli tahtanın üstünde: kalan yüksekliğe sığdır
+    const h = sel => document.querySelector(sel).getBoundingClientRect().height;
+    reserved = h(".side") + h("#touch") + h(".touch-hint") + 64;   // + boşluklar ve çerçeve
+  }
+  const byH = Math.floor((innerHeight - reserved) / ROWS);
+  const byW = Math.floor((innerWidth - (narrow ? 44 : 32 + 22 + Math.min(400, innerWidth * .42))) / COLS);
+  CELL = Math.max(14, Math.min(byH, byW, 44));
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = COLS * CELL * dpr; cv.height = ROWS * CELL * dpr;
+  cv.style.width = COLS * CELL + "px"; cv.style.height = ROWS * CELL + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  boardBg = null;
+  nv.width = 96 * dpr; nv.height = 96 * dpr; nv.style.width = "96px"; nv.style.height = "96px";
+  nctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (G) drawNext();
+}
+addEventListener("resize", resize);
+
+// Renk tonları: her renk için açık/koyu tonlar bir kez hesaplanıp saklanır.
+const shadeCache = new Map();
+function shade(hex, f) {
+  const n = parseInt(hex.slice(1), 16), r = n >> 16, g = n >> 8 & 255, b = n & 255;
+  const m = v => Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f));
+  return `rgb(${m(r)},${m(g)},${m(b)})`;
+}
+function tones(hex) {
+  if (!shadeCache.has(hex)) shadeCache.set(hex, { hi: shade(hex, .35), lo: shade(hex, -.28), edge: shade(hex, -.5), glow: shade(hex, .6) });
+  return shadeCache.get(hex);
+}
+function rr(c, x, y, w, h, r) {
+  c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+// Parlak, hafif yuvarlatılmış "şeker" blok
+function block(c, x, y, s, color, alpha = 1) {
+  const t = tones(color), p = Math.max(1, s * .05), r = s * .18;
+  c.globalAlpha = alpha;
+  const g = c.createLinearGradient(x, y, x + s * .3, y + s);
+  g.addColorStop(0, t.hi); g.addColorStop(.55, color); g.addColorStop(1, t.lo);
+  rr(c, x + p, y + p, s - 2 * p, s - 2 * p, r); c.fillStyle = g; c.fill();
+  c.lineWidth = Math.max(1, s * .05); c.strokeStyle = t.edge; c.stroke();
+  rr(c, x + s * .2, y + s * .14, s * .42, s * .14, s * .07); c.fillStyle = "rgba(255,255,255,.45)"; c.fill();   // üst parlama
+  c.globalAlpha = 1;
+}
+let boardBg = null;
+function draw(dt) {
+  const W = COLS * CELL, H = ROWS * CELL;
+  if (!boardBg) {
+    boardBg = ctx.createRadialGradient(W / 2, H * .35, 10, W / 2, H / 2, H * .75);
+    boardBg.addColorStop(0, "#16212a"); boardBg.addColorStop(1, "#0a0f13");
+  }
+  ctx.fillStyle = boardBg; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "rgba(147,163,173,.10)";
+  for (let x = 1; x < COLS; x++) for (let y = 1; y < ROWS; y++) ctx.fillRect(x * CELL - 1, y * CELL - 1, 2, 2);   // kareli defter noktaları
+  if (!G) return;
+  G.trails = G.trails.filter(tr => (tr.t -= dt) > 0);            // düşüş izleri
+  for (const tr of G.trails) {
+    const g = ctx.createLinearGradient(0, tr.y0 * CELL, 0, tr.y1 * CELL);
+    g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(1, tones(tr.c).glow);
+    ctx.globalAlpha = tr.t / 220 * .35; ctx.fillStyle = g;
+    for (const c of tr.cols) ctx.fillRect(c * CELL + CELL * .15, tr.y0 * CELL, CELL * .7, (tr.y1 - tr.y0) * CELL);
+    ctx.globalAlpha = 1;
+  }
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (G.grid[r][c]) block(ctx, c * CELL, r * CELL, CELL, G.grid[r][c]);
+  G.flash = G.flash.filter(f => (f.t -= dt) > 0);
+  for (const f of G.flash) { ctx.fillStyle = `rgba(255,240,180,${f.t / 300 * .7})`; ctx.fillRect(0, f.r * CELL, W, CELL); }
+  G.parts = G.parts.filter(q => (q.t -= dt) > 0);
+  for (const q of G.parts) {
+    q.x += q.vx * dt; q.y += q.vy * dt; q.vy += .0012 * dt;
+    ctx.globalAlpha = Math.min(1, q.t / 400); ctx.fillStyle = q.c || "#fff";
+    ctx.fillRect(q.x - q.s / 2, q.y - q.s / 2, q.s, q.s);
+  }
+  ctx.globalAlpha = 1;
+
+  const p = G.piece; if (!p || G.state === "over") return;
+  if (G.mode === "control") {             // hayalet: nereye düşeceğini göster
+    let gy = p.y; while (!collides(p.m, p.x, gy + 1)) gy++;
+    ctx.strokeStyle = p.c; ctx.globalAlpha = .55; ctx.lineWidth = 2;
+    p.m.forEach((row, r) => row.forEach((v, c) => { if (v && gy + r >= 0) { rr(ctx, (p.x + c) * CELL + 3, (gy + r) * CELL + 3, CELL - 6, CELL - 6, CELL * .15); ctx.stroke(); } }));
+    ctx.globalAlpha = 1;
+  }
+  const pulse = .45 + .4 * Math.sin(performance.now() / 160);
+  ctx.font = `700 ${Math.floor(CELL * .5)}px "JetBrains Mono", monospace`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  p.m.forEach((row, r) => row.forEach((v, c) => { if (v && p.y + r >= 0) {
+    const X = (p.x + c) * CELL, Y = (p.y + r) * CELL;
+    block(ctx, X, Y, CELL, G.mode === "plunge" ? "#ff5c7a" : p.c);
+    if (G.mode === "question") {          // kilitli: önce cevapla
+      ctx.globalAlpha = pulse; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
+      rr(ctx, X + 1, Y + 1, CELL - 2, CELL - 2, CELL * .2); ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.fillStyle = "rgba(13,18,22,.7)"; ctx.fillText("?", X + CELL / 2, Y + CELL / 2 + 1);
+    }
+  } }));
+}
+function drawNext() {
+  nctx.clearRect(0, 0, 96, 96);
+  const p = G.next, s = 20;
+  let minC = 9, maxC = 0, minR = 9, maxR = 0;
+  p.m.forEach((r, ri_) => r.forEach((v, c) => { if (v) { minC = Math.min(minC, c); maxC = Math.max(maxC, c); minR = Math.min(minR, ri_); maxR = Math.max(maxR, ri_); } }));
+  const ox = (96 - (maxC - minC + 1) * s) / 2 - minC * s, oy = (96 - (maxR - minR + 1) * s) / 2 - minR * s;
+  p.m.forEach((row, r) => row.forEach((v, c) => { if (v) block(nctx, ox + c * s, oy + r * s, s, p.c); }));
+}
+
+/* ================= HUD ================= */
+function updateHud() {
+  $("score").textContent = G.score;
+  $("mult").textContent = "×" + mult();
+  $("lines").textContent = G.lines;
+  $("streak").textContent = G.streak;
+  const inStage = G.done - (G.level - G.startLevel) * QPER;
+  $("lvlName").textContent = `${tierName(G.tierIdx)} · ${levelName(G.tierIdx, G.level)}`;
+  $("lvlStep").textContent = tpl(T().step, { n: G.level + 1, m: G.tier.levels.length });
+  $("lvlBar").style.width = Math.min(100, inStage / QPER * 100) + "%";
+  $("lvlNeed").textContent = tpl(T().need, { n: Math.min(G.done + 1, totalQ()), m: totalQ(), s: (TIERS[0].speed / gravity()).toFixed(1) });
+}
+function updateTimer() {
+  const bar = $("timerBar");
+  if (!G || G.mode !== "question" || G.answered || !G.piece) { bar.style.width = "0%"; return; }
+  // Kalan süre: parçanın yere değmesine kaç satır kaldı
+  const p = G.piece; let gy = p.y; while (!collides(p.m, p.x, gy + 1)) gy++;
+  const total = Math.max(1, gy - G.spawnRow), left = gy - p.y + (1 - G.lockT / LOCK_DELAY) * .5;
+  const f = Math.max(0, Math.min(1, left / total));
+  bar.style.width = f * 100 + "%";
+  bar.style.background = f < .3 ? "var(--bad)" : "var(--info)";
+}
+
+/* ================= Döngü ================= */
+function step(dt) {
+  const p = G.piece;
+  if (G.mode === "plunge") {               // yanlış cevap: parça hızla dümdüz iner
+    G.acc += dt;
+    while (G.acc >= 28) { G.acc -= 28; if (!tryMove(0, 1)) { addTrail(G.plungeY); lockPiece(); return; } }
+    return;
+  }
+  if (collides(p.m, p.x, p.y + 1)) {       // yerde: kısa kayma payı, sonra kilitlen
+    G.acc = 0; G.lockT += dt;
+    if (G.lockT >= LOCK_DELAY) lockPiece();
+    return;
+  }
+  G.acc += dt;
+  const iv = G.mode === "question" ? questionGravity() : gravity();
+  if (G.acc >= iv) { G.acc -= iv; tryMove(0, 1); }
+}
+let lastT = performance.now();
+function loop(t) {
+  const dt = Math.min(100, t - lastT); lastT = t;
+  if (G && G.state === "playing") holdTick(dt);
+  if (G && G.state === "playing") step(dt);
+  if (!$("menu").classList.contains("hidden")) drawCover(dt);
+  else { draw(dt); updateTimer(); }
+  requestAnimationFrame(loop);
+}
+
+/* ================= Ekranlar ================= */
+function showMenu() {
+  if (G) G.state = "menu";
+  held.clear(); closeOverlay();
+  $("game").classList.add("hidden"); $("menu").classList.remove("hidden");
+  renderMenu();
+}
+function startGame() {
+  store.set("mt_tier", tierIdx);
+  $("menu").classList.add("hidden"); $("game").classList.remove("hidden");
+  $("prev").textContent = "";
+  newGame(); updateHud(); resize(); ensureAudio();
+  $("pauseBtn").textContent = T().pause;
+}
+function togglePause() {
+  if (!G || G.state === "over" || G.state === "menu") return;
+  if (G.state === "playing") {
+    G.state = "paused"; held.clear(); $("pauseBtn").textContent = T().resume;
+    openOverlay(`<h2>${T().paused}</h2><p class="label">${T().pausedHint}</p>
+      <div class="btns"><button class="btn-main" data-x="resume">${T().cont}</button><button class="btn-sec" data-x="menu">${T().menu}</button></div>`);
+  } else { G.state = "playing"; $("pauseBtn").textContent = T().pause; closeOverlay(); lastT = performance.now(); }
+}
+/* ================= Sıralama ================= */
+// Veri katmanı: şimdilik bu cihazda (localStorage) tutulur. Online sürümde aynı iki fonksiyon
+// (submit, top) sunucuya bağlanacak; ekran kodu değişmeyecek.
+const Board = {
+  key: tier => "mt_lb_" + tier,
+  top(tier) { return store.get(this.key(tier), []); },
+  submit(tier, entry) {
+    const list = this.top(tier);
+    list.push(entry);
+    list.sort((a, b) => b.score - a.score || a.t - b.t);
+    store.set(this.key(tier), list.slice(0, 50));
+    return list.indexOf(entry) + 1;   // sıra (1'den başlar)
+  },
+};
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+let lastSaved = null;   // listede vurgulanacak son kayıt
+function renderLeaderboard() {
+  const t = TIERS[tierIdx], list = Board.top(t.id).slice(0, 10);
+  $("lbTier").textContent = tierName(tierIdx);
+  $("lb").innerHTML = list.length ? list.map((e, i) => `
+    <li class="${lastSaved && e.t === lastSaved ? "me" : ""}">
+      <span class="rk">${i + 1}</span><span class="nm">${esc(e.name)}</span>
+      <span class="mt">${tpl(T().lbStage, { n: e.stage })} · ${e.correct}/${e.total}</span>
+      <span class="sc">${e.score}</span>
+    </li>`).join("") : `<li><span class="empty">${T().lbEmpty}</span></li>`;
+}
+function saveScore(e) {
+  e.preventDefault();
+  const name = $("nameIn").value.trim().slice(0, 16);
+  if (!name || !G || G.saved) return;
+  store.set("mt_name", name);
+  const entry = { name, score: G.score, stage: G.level + 1, correct: G.correct, total: G.done, t: Date.now() };
+  const rank = Board.submit(G.tier.id, entry);
+  G.saved = true; lastSaved = entry.t;
+  $("saveBtn").disabled = $("nameIn").disabled = true;
+  $("saveMsg").textContent = tpl(T().saved, { r: rank });
+}
+
+function gameOver(win = false) {
+  G.state = "over"; held.clear();
+  const key = "mt_best_" + G.tier.id, best = store.get(key, 0), isBest = G.score > best;
+  if (isBest) store.set(key, G.score);
+  const acc = G.asked ? Math.round(G.correct / G.asked * 100) : 0;
+  if (win) { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, .15), i * 120)); }
+  else { beep(300, .2); setTimeout(() => beep(220, .3), 180); }
+  openOverlay(`<h2>${win ? T().win : T().over}</h2>
+    <div class="big">${G.score}</div>
+    ${win ? `<div>${tpl(T().winText, { c: G.correct, m: G.done })}</div>` : ""}
+    <div>${isBest && G.score > 0 ? T().newBest : tpl(T().best, { n: Math.max(best, G.score) })}</div>
+    <div class="label">${tpl(T().summary, { tier: tierName(G.tierIdx), n: G.level + 1, l: G.lines, acc })}</div>
+    ${G.score > 0 ? `<form class="savef" id="saveForm"><input id="nameIn" maxlength="16" autocomplete="nickname" placeholder="${T().namePh}" aria-label="${T().namePh}" value="${esc(store.get("mt_name", ""))}"><button id="saveBtn">${T().save}</button></form>
+    <div class="save-msg" id="saveMsg"></div>` : ""}
+    <div class="btns"><button class="btn-main" data-x="again">${T().again}</button><button class="btn-sec" data-x="menu">${T().choose}</button></div>`);
+}
+function openOverlay(html) {
+  $("modal").innerHTML = html; $("overlay").classList.remove("hidden");
+  $("saveForm")?.addEventListener("submit", saveScore);
+  ($("nameIn") || $("modal").querySelector("button"))?.focus();
+}
+function closeOverlay() { $("overlay").classList.add("hidden"); }
+$("modal").addEventListener("click", e => {
+  const x = e.target.closest("button")?.dataset.x;
+  if (x === "resume") togglePause();
+  else if (x === "menu") showMenu();
+  else if (x === "again") { closeOverlay(); startGame(); }
+});
+$("pauseBtn").addEventListener("click", togglePause);
+$("menuBtn").addEventListener("click", showMenu);
+$("muteBtn").addEventListener("click", toggleMute);
+$("startBtn").addEventListener("click", startGame);
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach(el => { el.innerHTML = T()[el.dataset.t]; });
+  $("langbar").innerHTML = LANGS.map(([k, n]) => `<button class="lang" data-l="${k}" aria-pressed="${k === lang}">${n}</button>`).join("");
+  $("title").setAttribute("aria-label", "Matetristik");
+  buildTitle();
+  $("muteBtn").textContent = muted ? T().soundOff : T().soundOn;
+  renderMenu();
+}
+$("langbar").addEventListener("click", e => { const b = e.target.closest(".lang"); if (!b) return; lang = b.dataset.l; store.set("mt_lang", lang); applyLang(); });
+
+function renderMenu() {
+  $("tiers").innerHTML = TIERS.map((t, i) => `
+    <button class="tier" data-i="${i}" aria-pressed="${i === tierIdx}">
+      <span class="t-head"><span class="t-name">${tierName(i)}</span><span class="t-step">${tpl(T().levels, { n: t.levels.length, q: t.levels.length * QPER })} · <b class="multb">×${t.mult}</b></span></span>
+      <span class="t-desc">${T().tiers[i][1]}</span>
+      <span class="t-sample">${t.sample}</span>
+      <span class="t-best">${tpl(T().best, { n: store.get("mt_best_" + t.id, 0) })}</span>
+    </button>`).join("");
+  if (startLevel >= TIERS[tierIdx].levels.length) startLevel = 0;
+  $("chips").innerHTML = T().tiers[tierIdx][2].map((l, i) => `<button class="chip" data-i="${i}" aria-pressed="${i === startLevel}">${i + 1}. ${l}</button>`).join("");
+  $("startInfo").textContent = tpl(T().startInfo, { tier: tierName(tierIdx), n: startLevel + 1, name: levelName(tierIdx, startLevel) });
+  renderLeaderboard();
+}
+$("tiers").addEventListener("click", e => { const b = e.target.closest(".tier"); if (!b) return; tierIdx = +b.dataset.i; startLevel = 0; renderMenu(); });
+$("chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; startLevel = +b.dataset.i; renderMenu(); });
+
+function toast(t) { const d = document.createElement("div"); d.className = "toast"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2300); }
+
+/* ================= Ses ================= */
+let AC = null;
+function ensureAudio() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch { AC = null; } } if (AC && AC.state === "suspended") AC.resume().catch(() => {}); }
+function beep(f, d, type = "triangle") {
+  if (muted || !AC) return;
+  try {
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.value = f; g.gain.setValueAtTime(.08, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, AC.currentTime + d);
+    o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + d + .02);
+  } catch {}
+}
+function toggleMute() { muted = !muted; store.set("mt_muted", muted); $("muteBtn").textContent = muted ? T().soundOff : T().soundOn; }
+
+/* ================= Kapak ================= */
+// Başlık: "MATETRİSTİK", her harf bir Tetris bloğu; altında işlem taşları
+const PAL = Object.values(SHAPES).map(s => s.c);
+function buildTitle() {
+  let i = 0;
+  const tile = (ch, op) => `<span class="tile${op ? " op" : ""}" style="--c:${PAL[i % PAL.length]};--i:${i++}" aria-hidden="true">${ch}</span>`;
+  const name = lang === "tr" ? "MATETRİSTİK" : "MATETRISTIK";
+  $("w1").innerHTML = [...name].map(ch => tile(ch)).join("");
+  $("w2").innerHTML = ["+", "−", "×", "÷", "="].map(ch => tile(ch, true)).join("");
+}
+// Arka planda üzerinde matematik sembolleri olan parçalar yağar
+const cov = $("cover"), cc = cov.getContext("2d");
+const SYMS = ["+", "−", "×", "÷", "=", "√", "π", "Σ", "∫", "%", "²", "∞"];
+let covP = [], covAcc = 1000, covW = 0, covH = 0;
+function drawCover(dt) {
+  const w = cov.clientWidth, h = cov.clientHeight, dpr = window.devicePixelRatio || 1;
+  if (!w) return;
+  if (w !== covW || h !== covH) { covW = w; covH = h; cov.width = w * dpr; cov.height = h * dpr; cc.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  const s = Math.max(22, Math.min(34, w / 30));
+  covAcc += dt;
+  if (covAcc > 650 && covP.length < 14) {
+    covAcc = 0;
+    const k = pick(Object.keys(SHAPES)); let m = SHAPES[k].m; for (let r = ri(0, 3); r > 0; r--) m = rotate(m);
+    covP.push({ m, c: SHAPES[k].c, x: w * (.3 + Math.random() * .62), y: -s * 4, v: .03 + Math.random() * .04, sym: m.map(row => row.map(() => pick(SYMS))) });
+  }
+  cc.clearRect(0, 0, w, h);
+  cc.textAlign = "center"; cc.textBaseline = "middle"; cc.font = `700 ${Math.floor(s * .5)}px "JetBrains Mono", monospace`;
+  covP = covP.filter(p => (p.y += p.v * dt) < h + s);
+  for (const p of covP) p.m.forEach((row, r) => row.forEach((v, c) => {
+    if (!v) return;
+    const X = p.x + c * s, Y = p.y + r * s;
+    block(cc, X, Y, s, p.c);
+    cc.fillStyle = "rgba(10,14,18,.75)"; cc.fillText(p.sym[r][c], X + s / 2, Y + s / 2 + 1);
+  }));
+}
+
+// Test için iç durumu dışarı aç
+window.__MT = { TIERS, I18N, get G() { return G; }, setLang: l => { lang = l; applyLang(); } };
+
+applyLang(); resize(); requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>
