@@ -9,7 +9,8 @@
 <meta name="theme-color" content="#14181f">
 <style>body{margin:0}</style>
 </head>
-<body><title>Matetristik</title>
+<body>
+<title>Matetristik</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Lexend:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -119,6 +120,9 @@ kbd{font-family:var(--f-math);font-size:12px;background:var(--bg-2);border:1px s
 .side{flex:0 1 400px;max-width:100%;display:flex;flex-direction:column;gap:14px;min-width:0}
 .hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .stat{background:var(--panel);border-radius:8px;padding:8px 10px;min-width:0}
+.credit{margin:10px 0 0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.credit b{font-family:var(--f-display,inherit);color:#ffd34e;letter-spacing:.06em;font-weight:400}
+#modal .credit{margin:4px 0 8px;text-align:center}
 .multb{color:var(--warn,#ffd166);font-family:var(--f-math);font-weight:700}
 .stat .v{font-family:var(--f-math);font-size:22px;font-variant-numeric:tabular-nums}
 .lvl{background:var(--panel);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
@@ -162,8 +166,7 @@ kbd{font-family:var(--f-math);font-size:12px;background:var(--bg-2);border:1px s
   #game{flex-direction:column;align-items:center;height:auto;gap:10px}
   .side{width:100%;flex:none;order:-1;gap:8px}
   #lvlNeed{display:none}
-  .hud .stat{padding:4px 8px}.hud .multb{color:var(--warn,#ffd166);font-family:var(--f-math);font-weight:700}
-.stat .v{font-size:18px}
+  .hud .stat{padding:4px 8px}.hud .stat .v{font-size:18px}
   .qcard{padding:10px 12px;gap:8px}
   .qtext{font-size:22px;min-height:2.4em}
   .opt{padding:10px 6px;font-size:22px;min-height:58px}
@@ -203,6 +206,7 @@ kbd{font-family:var(--f-math);font-size:12px;background:var(--bg-2);border:1px s
       <div class="label" data-t="eyebrow"></div>
       <h1 class="tiles" id="title"><span class="word" id="w1"></span><span class="word" id="w2"></span></h1>
       <p class="lede" data-t="lede"></p>
+      <p class="credit"><span data-t="madeBy"></span> <b>GÖKHAN ATALAR</b></p>
     </div>
   </header>
 
@@ -326,7 +330,7 @@ const I18N = {
   ok:"Doğru! +{p} · Kontrol sende", okBonus:"Doğru! +{p} (+{b} seri) · Kontrol sende",
   wrong:"Yanlış! Doğrusu {a}. Parça düşüyor…", timeout:"Süre doldu. Doğrusu {a}.", nudge:"Önce soruyu doğru cevapla, sonra yönetebilirsin.",
   prevOk:"Önceki: Doğru · {q} = {a}", prevWrong:"Önceki: Yanlış · {q} = {a}", prevTimeout:"Önceki: Süre doldu · doğru cevap {a}",
-  linePts:"{n} satır! +{p} (×{x})", step:"Bölüm {n}/{m}", need:"Soru {n}/{m} · Hız ×{s}",
+  madeBy:"Oyun yapımcısı", linePts:"{n} satır! +{p} (×{x})", step:"Bölüm {n}/{m}", need:"Soru {n}/{m} · Hız ×{s}",
   win:"Seviye tamamlandı!", winText:"{m} sorunun {c} tanesini doğru bildin.", fast:"⚡ Hızlı! +{f}",
   pass:"Pas · {n} hak (3)", passed:"Pas geçtin · Kontrol sende", prevPass:"Önceki: Pas · {q} = {a}",
   lbTitle:"Sıralama", lbNote:"Bu cihazda oynanan en iyi skorlar. Arkadaşlarla ve tüm dünyayla sıralama online sürümde gelecek.",
@@ -364,7 +368,7 @@ const I18N = {
   ok:"Correct! +{p} · You're in control", okBonus:"Correct! +{p} (+{b} streak) · You're in control",
   wrong:"Wrong! It was {a}. The piece is dropping…", timeout:"Time's up. It was {a}.", nudge:"Answer the question correctly first, then you can steer.",
   prevOk:"Last: Correct · {q} = {a}", prevWrong:"Last: Wrong · {q} = {a}", prevTimeout:"Last: Time's up · answer was {a}",
-  linePts:"{n} lines! +{p} (×{x})", step:"Stage {n}/{m}", need:"Question {n}/{m} · Speed ×{s}",
+  madeBy:"Game by", linePts:"{n} lines! +{p} (×{x})", step:"Stage {n}/{m}", need:"Question {n}/{m} · Speed ×{s}",
   win:"Level complete!", winText:"You got {c} of {m} questions right.", fast:"⚡ Fast! +{f}",
   pass:"Pass · {n} left (3)", passed:"Passed · You're in control", prevPass:"Last: Passed · {q} = {a}",
   lbTitle:"Leaderboard", lbNote:"Best scores played on this device. Rankings with friends and the whole world will come with the online version.",
@@ -402,7 +406,7 @@ const I18N = {
   ok:"¡Correcto! +{p} · Tienes el control", okBonus:"¡Correcto! +{p} (+{b} racha) · Tienes el control",
   wrong:"¡Incorrecto! Era {a}. La pieza cae…", timeout:"Se acabó el tiempo. Era {a}.", nudge:"Primero responde bien la pregunta y luego podrás moverla.",
   prevOk:"Anterior: Correcto · {q} = {a}", prevWrong:"Anterior: Incorrecto · {q} = {a}", prevTimeout:"Anterior: Sin tiempo · era {a}",
-  linePts:"¡{n} líneas! +{p} (×{x})", step:"Etapa {n}/{m}", need:"Pregunta {n}/{m} · Velocidad ×{s}",
+  madeBy:"Creado por", linePts:"¡{n} líneas! +{p} (×{x})", step:"Etapa {n}/{m}", need:"Pregunta {n}/{m} · Velocidad ×{s}",
   win:"¡Nivel completado!", winText:"Acertaste {c} de {m} preguntas.", fast:"⚡ ¡Rápido! +{f}",
   pass:"Pasar · quedan {n} (3)", passed:"Pasaste · Tienes el control", prevPass:"Anterior: Pasada · {q} = {a}",
   lbTitle:"Clasificación", lbNote:"Mejores puntuaciones en este dispositivo. La clasificación con amigos y con todo el mundo llegará con la versión online.",
@@ -440,7 +444,7 @@ const I18N = {
   ok:"Верно! +{p} · Управляй", okBonus:"Верно! +{p} (+{b} за серию) · Управляй",
   wrong:"Неверно! Ответ {a}. Фигура падает…", timeout:"Время вышло. Ответ {a}.", nudge:"Сначала верно ответь на вопрос, потом сможешь управлять.",
   prevOk:"Прошлый: верно · {q} = {a}", prevWrong:"Прошлый: неверно · {q} = {a}", prevTimeout:"Прошлый: время вышло · ответ {a}",
-  linePts:"Линий: {n}! +{p} (×{x})", step:"Этап {n}/{m}", need:"Вопрос {n}/{m} · Скорость ×{s}",
+  madeBy:"Автор игры", linePts:"Линий: {n}! +{p} (×{x})", step:"Этап {n}/{m}", need:"Вопрос {n}/{m} · Скорость ×{s}",
   win:"Уровень пройден!", winText:"Верных ответов: {c} из {m}.", fast:"⚡ Быстро! +{f}",
   pass:"Пас · осталось {n} (3)", passed:"Пас · Управляй", prevPass:"Прошлый: пас · {q} = {a}",
   lbTitle:"Рейтинг", lbNote:"Лучшие результаты на этом устройстве. Рейтинг с друзьями и со всем миром появится в онлайн-версии.",
@@ -478,7 +482,7 @@ const I18N = {
   ok:"Richtig! +{p} · Du steuerst", okBonus:"Richtig! +{p} (+{b} Serie) · Du steuerst",
   wrong:"Falsch! Richtig war {a}. Der Stein fällt…", timeout:"Zeit um. Richtig war {a}.", nudge:"Beantworte zuerst die Frage richtig, dann kannst du steuern.",
   prevOk:"Zuletzt: richtig · {q} = {a}", prevWrong:"Zuletzt: falsch · {q} = {a}", prevTimeout:"Zuletzt: Zeit um · Antwort {a}",
-  linePts:"{n} Reihen! +{p} (×{x})", step:"Stufe {n}/{m}", need:"Frage {n}/{m} · Tempo ×{s}",
+  madeBy:"Spiel von", linePts:"{n} Reihen! +{p} (×{x})", step:"Stufe {n}/{m}", need:"Frage {n}/{m} · Tempo ×{s}",
   win:"Niveau geschafft!", winText:"Du hast {c} von {m} Fragen richtig.", fast:"⚡ Schnell! +{f}",
   pass:"Joker · noch {n} (3)", passed:"Joker gesetzt · Du steuerst", prevPass:"Zuletzt: Joker · {q} = {a}",
   lbTitle:"Bestenliste", lbNote:"Die besten Ergebnisse auf diesem Gerät. Ranglisten mit Freunden und weltweit kommen mit der Online-Version.",
@@ -516,7 +520,7 @@ const I18N = {
   ok:"Correct ! +{p} · À toi de jouer", okBonus:"Correct ! +{p} (+{b} série) · À toi de jouer",
   wrong:"Faux ! C'était {a}. La pièce tombe…", timeout:"Temps écoulé. C'était {a}.", nudge:"Réponds d'abord correctement, ensuite tu pourras diriger.",
   prevOk:"Précédente : juste · {q} = {a}", prevWrong:"Précédente : faux · {q} = {a}", prevTimeout:"Précédente : temps écoulé · réponse {a}",
-  linePts:"{n} lignes ! +{p} (×{x})", step:"Étape {n}/{m}", need:"Question {n}/{m} · Vitesse ×{s}",
+  madeBy:"Créé par", linePts:"{n} lignes ! +{p} (×{x})", step:"Étape {n}/{m}", need:"Question {n}/{m} · Vitesse ×{s}",
   win:"Niveau terminé !", winText:"Tu as répondu juste à {c} questions sur {m}.", fast:"⚡ Rapide ! +{f}",
   pass:"Joker · reste {n} (3)", passed:"Joker utilisé · À toi de jouer", prevPass:"Précédente : joker · {q} = {a}",
   lbTitle:"Classement", lbNote:"Les meilleurs scores sur cet appareil. Le classement entre amis et mondial arrivera avec la version en ligne.",
@@ -1215,6 +1219,7 @@ function gameOver(win = false) {
     <div class="big">${G.score}</div>
     ${win ? `<div>${tpl(T().winText, { c: G.correct, m: G.done })}</div>` : ""}
     <div>${isBest && G.score > 0 ? T().newBest : tpl(T().best, { n: Math.max(best, G.score) })}</div>
+    <div class="credit">${T().madeBy} <b>GÖKHAN ATALAR</b></div>
     <div class="label">${tpl(T().summary, { tier: tierName(G.tierIdx), n: G.level + 1, l: G.lines, acc })}</div>
     ${G.score > 0 ? `<form class="savef" id="saveForm"><input id="nameIn" maxlength="16" autocomplete="nickname" placeholder="${T().namePh}" aria-label="${T().namePh}" value="${esc(store.get("mt_name", ""))}"><button id="saveBtn">${T().save}</button></form>
     <div class="save-msg" id="saveMsg"></div>` : ""}
