@@ -32,7 +32,7 @@
   --f-math:"JetBrains Mono", ui-monospace, "Consolas", monospace;
   color-scheme:dark;
 }
-html,body{height:100%}
+html,body{height:100%;overscroll-behavior:none}   /* telefonda aşağı çekince sayfa yenilenmesin */
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);
   padding-left:max(16px, env(safe-area-inset-left, 0px));
   padding-right:max(16px, env(safe-area-inset-right, 0px));
@@ -115,7 +115,8 @@ kbd{font-family:var(--f-math);font-size:12px;background:var(--bg-2);border:1px s
 
 /* ---------- Oyun ---------- */
 #game{display:flex;gap:22px;justify-content:center;align-items:flex-start;height:100%}
-.board-wrap{display:flex;flex-direction:column;gap:10px;align-items:center}
+.board-wrap{display:flex;flex-direction:column;gap:10px;align-items:center;position:relative}
+.fpause{display:none;position:absolute;top:8px;right:8px;z-index:2;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:rgba(32,42,50,.85);font-size:14px;touch-action:manipulation}
 #board{display:block;background:#0d1216;border:3px solid var(--line);border-radius:8px;touch-action:none;box-shadow:0 0 0 6px #0d1216,0 20px 50px rgba(0,0,0,.45)}
 .side{flex:0 1 400px;max-width:100%;display:flex;flex-direction:column;gap:14px;min-width:0}
 .hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -161,7 +162,7 @@ kbd{font-family:var(--f-math);font-size:12px;background:var(--bg-2);border:1px s
 .touch button:active{background:var(--line);border-color:var(--accent)}
 .touch .tpause{display:none;max-width:52px;font-size:16px}
 .touch-hint{display:none;font-size:12px;color:var(--muted);text-align:center}
-@media (pointer:coarse){.touch{display:flex}.touch-hint{display:block}.help{display:none}}
+@media (pointer:coarse){.help{display:none}#game{touch-action:none}}
 @media (max-width:720px){
   #game{flex-direction:column;align-items:center;height:auto;gap:10px}
   .side{width:100%;flex:none;order:-1;gap:8px}
@@ -173,15 +174,24 @@ kbd{font-family:var(--f-math);font-size:12px;background:var(--bg-2);border:1px s
   .row2,.toolbar .tbtn:not(#pauseBtn){display:none}
   .lvl{padding:6px 10px}
 }
-/* Telefon: tahtaya en fazla yeri bırak */
+/* Telefon: tahtaya en fazla yeri bırak. Alt butonlar yok; tahtada parmakla oynanır. */
 @media (max-width:720px) and (pointer:coarse){
-  .lvl,#qLabel,#prev,.toolbar{display:none}
-  .qcard{gap:6px}
+  body{padding-block:6px}
+  #game{gap:6px;touch-action:none}
+  .side{gap:6px}
+  .lvl,#qLabel,#prev,.toolbar,.touch,.touch-hint{display:none!important}
+  .fpause{display:block;opacity:.75}
+  .toast.toast{top:auto;bottom:calc(28px + env(safe-area-inset-bottom,0px));font-size:14px;padding:8px 14px}   /* soruyu kapatmasın */
+  .hud{gap:6px}
+  .hud .stat{padding:3px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+  .hud .stat .label{font-size:10px}
+  .hud .stat .v{font-size:16px}
+  .qcard{gap:6px;padding:8px 10px}
   .qtext{min-height:2.2em;font-size:21px}
   .opt{min-height:52px;padding:6px}
   .opt small{display:none}
-  .touch button{height:52px}
-  .touch .tpause{display:block}
+  .passbtn{padding:6px;font-size:12px}
+  .status{font-size:13px;min-height:1.3em}
 }
 
 /* Kaplamalar */
@@ -191,7 +201,7 @@ kbd{font-family:var(--f-math);font-size:12px;background:var(--bg-2);border:1px s
 .modal .big{font-family:var(--f-math);font-size:40px;color:var(--accent)}
 .modal .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .btn-sec{background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
-.toast{position:fixed;left:50%;top:calc(18px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--accent);color:#1a1a1a;font-family:var(--f-display);padding:10px 20px;border-radius:8px;z-index:30;font-size:18px;pointer-events:none;animation:pop 2.2s ease forwards;white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis}
+.toast{position:fixed;left:50%;top:calc(18px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--accent);color:#1a1a1a;font-family:var(--f-display);padding:10px 20px;border-radius:8px;z-index:30;font-size:18px;pointer-events:none;animation:pop 2.2s ease forwards;max-width:calc(100vw - 32px);width:max-content;text-align:center;line-height:1.3}
 @keyframes pop{0%{opacity:0;transform:translate(-50%,-10px)}10%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-6px)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
@@ -256,6 +266,7 @@ kbd{font-family:var(--f-math);font-size:12px;background:var(--bg-2);border:1px s
 <!-- ================= OYUN ================= -->
 <section id="game" class="hidden">
   <div class="board-wrap">
+    <button class="fpause" id="fpause" aria-label="Pause">❚❚</button>
     <canvas id="board"></canvas>
     <div class="touch" id="touch">
       <button data-a="left" aria-label="◀">◀</button>
@@ -994,6 +1005,11 @@ $("touch").addEventListener("pointerdown", e => {
   ["pointerup","pointercancel","pointerleave"].forEach(ev => b.addEventListener(ev, end));
 });
 $("touch").addEventListener("contextmenu", e => e.preventDefault());
+$("fpause").addEventListener("click", togglePause);
+// Oyun açıkken parmak kaydırması sayfayı kaydırmasın / yenilemesin (iOS ve eski Android için)
+document.addEventListener("touchmove", e => { if (G && inGame() && !e.target.closest(".overlay")) e.preventDefault(); }, { passive: false });
+// Uygulamadan çıkınca oyun duraklasın
+document.addEventListener("visibilitychange", () => { if (document.hidden && G && G.state === "playing") togglePause(); });
 
 // Tahtada hareketler: dokun = döndür, sağa/sola sürükle = kaydır, yavaş aşağı = hızlandır, hızlı aşağı fırlat = bırak
 let sw = null;
@@ -1031,7 +1047,7 @@ function resize() {
   let reserved = 40;
   if (narrow) {   // telefonda soru paneli tahtanın üstünde: kalan yüksekliğe sığdır
     const h = sel => document.querySelector(sel).getBoundingClientRect().height;
-    reserved = h(".side") + h("#touch") + h(".touch-hint") + 64;   // + boşluklar ve çerçeve
+    reserved = h(".side") + h("#touch") + h(".touch-hint") + 34;   // + boşluklar ve çerçeve
   }
   const byH = Math.floor((innerHeight - reserved) / ROWS);
   const byW = Math.floor((innerWidth - (narrow ? 44 : 32 + 22 + Math.min(400, innerWidth * .42))) / COLS);
@@ -1194,6 +1210,7 @@ function startGame() {
   $("prev").textContent = "";
   newGame(); updateHud(); resize(); ensureAudio();
   $("pauseBtn").textContent = T().pause;
+  if (matchMedia("(pointer:coarse)").matches) toast(T().touchHint);   // telefonda kontrolleri bir kez hatırlat
 }
 function togglePause() {
   if (!G || G.state === "over" || G.state === "menu") return;
