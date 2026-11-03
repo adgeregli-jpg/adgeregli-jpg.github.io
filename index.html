@@ -112,6 +112,10 @@ kbd{font-family:var(--f-math);font-size:12px;background:var(--bg-2);border:1px s
 .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;color:var(--muted);font-size:13.5px;line-height:1.6}
 .rules div{border-top:1px solid var(--line);padding-top:10px}
 .rules b{color:var(--fg);display:block;margin-bottom:2px}
+.more{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:14px}
+.more-list{display:flex;flex-wrap:wrap;gap:10px}
+.more-list a{color:var(--fg);text-decoration:none;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-weight:500}
+.more-list a:hover,.more-list a:focus-visible{border-color:var(--accent);color:var(--accent)}
 
 /* ---------- Oyun ---------- */
 #game{display:flex;gap:22px;justify-content:center;align-items:flex-start;height:100%}
@@ -256,6 +260,16 @@ kbd{font-family:var(--f-math);font-size:12px;background:var(--bg-2);border:1px s
     <div><b data-t="r3t"></b><span data-t="r3d"></span></div>
     <div><b data-t="r4t"></b><span data-t="r4d"></span></div>
   </div>
+
+  <nav class="more" aria-labelledby="moreTitle">
+    <div class="label" id="moreTitle" data-t="moreGames"></div>
+    <div class="more-list">
+      <a href="ata-gunu/">Ata'nın Günü</a>
+      <a href="turktet/">Türktet</a>
+      <a href="tetri-tarih/">Tetr-i Tarih</a>
+      <a href="top-cities.html">Top Cities</a>
+    </div>
+  </nav>
 </section>
 
 <!-- ================= OYUN ================= -->
@@ -347,7 +361,8 @@ const I18N = {
   madeBy:"Oyun yapımcısı", linePts:"{n} satır! +{p} (×{x})", step:"Bölüm {n}/{m}", need:"Soru {n}/{m} · Hız ×{s}",
   win:"Seviye tamamlandı!", winText:"{m} sorunun {c} tanesini doğru bildin.", fast:"⚡ Hızlı! +{f}",
   pass:"Pas · {n} hak (3)", passed:"Pas geçtin · Kontrol sende", prevPass:"Önceki: Pas · {q} = {a}",
-  lbTitle:"Sıralama", lbNote:"Bu cihazda oynanan en iyi skorlar. Arkadaşlarla ve tüm dünyayla sıralama online sürümde gelecek.",
+  moreGames:"Diğer oyunlar",
+  lbTitle:"Sıralama",lbNote:"Bu cihazda oynanan en iyi skorlar. Arkadaşlarla ve tüm dünyayla sıralama online sürümde gelecek.",
   lbEmpty:"Henüz skor yok. Bir oyun oyna, adını yaz, listeye gir!", namePh:"Adın", save:"Listeye kaydet", saved:"Kaydedildi · {r}. sıradasın", lbStage:"Bölüm {n}", toast:"Bölüm {n}: {name}",
   paused:"Duraklatıldı", pausedHint:"P veya Esc ile devam et", cont:"Devam et", menu:"Menü",
   over:"Oyun bitti", newBest:"Yeni rekor!", best:"Rekor: {n}", summary:"{tier} · Bölüm {n} · {l} satır · %{acc} doğru",
@@ -385,7 +400,8 @@ const I18N = {
   madeBy:"Game by", linePts:"{n} lines! +{p} (×{x})", step:"Stage {n}/{m}", need:"Question {n}/{m} · Speed ×{s}",
   win:"Level complete!", winText:"You got {c} of {m} questions right.", fast:"⚡ Fast! +{f}",
   pass:"Pass · {n} left (3)", passed:"Passed · You're in control", prevPass:"Last: Passed · {q} = {a}",
-  lbTitle:"Leaderboard", lbNote:"Best scores played on this device. Rankings with friends and the whole world will come with the online version.",
+  moreGames:"More games",
+  lbTitle:"Leaderboard",lbNote:"Best scores played on this device. Rankings with friends and the whole world will come with the online version.",
   lbEmpty:"No scores yet. Play a game, enter your name and get on the list!", namePh:"Your name", save:"Save to leaderboard", saved:"Saved · you're #{r}", lbStage:"Stage {n}", toast:"Stage {n}: {name}",
   paused:"Paused", pausedHint:"Press P or Esc to continue", cont:"Continue", menu:"Menu",
   over:"Game over", newBest:"New record!", best:"Record: {n}", summary:"{tier} · Stage {n} · {l} lines · {acc}% correct",
@@ -423,7 +439,8 @@ const I18N = {
   madeBy:"Creado por", linePts:"¡{n} líneas! +{p} (×{x})", step:"Etapa {n}/{m}", need:"Pregunta {n}/{m} · Velocidad ×{s}",
   win:"¡Nivel completado!", winText:"Acertaste {c} de {m} preguntas.", fast:"⚡ ¡Rápido! +{f}",
   pass:"Pasar · quedan {n} (3)", passed:"Pasaste · Tienes el control", prevPass:"Anterior: Pasada · {q} = {a}",
-  lbTitle:"Clasificación", lbNote:"Mejores puntuaciones en este dispositivo. La clasificación con amigos y con todo el mundo llegará con la versión online.",
+  moreGames:"Más juegos",
+  lbTitle:"Clasificación",lbNote:"Mejores puntuaciones en este dispositivo. La clasificación con amigos y con todo el mundo llegará con la versión online.",
   lbEmpty:"Aún no hay puntuaciones. ¡Juega, escribe tu nombre y entra en la lista!", namePh:"Tu nombre", save:"Guardar en la clasificación", saved:"Guardado · estás en el puesto {r}", lbStage:"Etapa {n}", toast:"Etapa {n}: {name}",
   paused:"En pausa", pausedHint:"Pulsa P o Esc para seguir", cont:"Seguir", menu:"Menú",
   over:"Fin del juego", newBest:"¡Nuevo récord!", best:"Récord: {n}", summary:"{tier} · Etapa {n} · {l} líneas · {acc}% aciertos",
@@ -461,7 +478,8 @@ const I18N = {
   madeBy:"Автор игры", linePts:"Линий: {n}! +{p} (×{x})", step:"Этап {n}/{m}", need:"Вопрос {n}/{m} · Скорость ×{s}",
   win:"Уровень пройден!", winText:"Верных ответов: {c} из {m}.", fast:"⚡ Быстро! +{f}",
   pass:"Пас · осталось {n} (3)", passed:"Пас · Управляй", prevPass:"Прошлый: пас · {q} = {a}",
-  lbTitle:"Рейтинг", lbNote:"Лучшие результаты на этом устройстве. Рейтинг с друзьями и со всем миром появится в онлайн-версии.",
+  moreGames:"Другие игры",
+  lbTitle:"Рейтинг",lbNote:"Лучшие результаты на этом устройстве. Рейтинг с друзьями и со всем миром появится в онлайн-версии.",
   lbEmpty:"Пока нет результатов. Сыграй, введи имя и попади в список!", namePh:"Твоё имя", save:"Сохранить в рейтинг", saved:"Сохранено · ты на {r}-м месте", lbStage:"Этап {n}", toast:"Этап {n}: {name}",
   paused:"Пауза", pausedHint:"Нажми P или Esc, чтобы продолжить", cont:"Продолжить", menu:"Меню",
   over:"Игра окончена", newBest:"Новый рекорд!", best:"Рекорд: {n}", summary:"{tier} · Этап {n} · {l} лин. · {acc}% верно",
@@ -499,7 +517,8 @@ const I18N = {
   madeBy:"Spiel von", linePts:"{n} Reihen! +{p} (×{x})", step:"Stufe {n}/{m}", need:"Frage {n}/{m} · Tempo ×{s}",
   win:"Niveau geschafft!", winText:"Du hast {c} von {m} Fragen richtig.", fast:"⚡ Schnell! +{f}",
   pass:"Joker · noch {n} (3)", passed:"Joker gesetzt · Du steuerst", prevPass:"Zuletzt: Joker · {q} = {a}",
-  lbTitle:"Bestenliste", lbNote:"Die besten Ergebnisse auf diesem Gerät. Ranglisten mit Freunden und weltweit kommen mit der Online-Version.",
+  moreGames:"Weitere Spiele",
+  lbTitle:"Bestenliste",lbNote:"Die besten Ergebnisse auf diesem Gerät. Ranglisten mit Freunden und weltweit kommen mit der Online-Version.",
   lbEmpty:"Noch keine Ergebnisse. Spiel eine Runde, gib deinen Namen ein und komm auf die Liste!", namePh:"Dein Name", save:"In Bestenliste speichern", saved:"Gespeichert · du bist auf Platz {r}", lbStage:"Stufe {n}", toast:"Stufe {n}: {name}",
   paused:"Pausiert", pausedHint:"P oder Esc zum Fortsetzen", cont:"Weiter", menu:"Menü",
   over:"Spiel vorbei", newBest:"Neuer Rekord!", best:"Rekord: {n}", summary:"{tier} · Stufe {n} · {l} Reihen · {acc}% richtig",
@@ -537,7 +556,8 @@ const I18N = {
   madeBy:"Créé par", linePts:"{n} lignes ! +{p} (×{x})", step:"Étape {n}/{m}", need:"Question {n}/{m} · Vitesse ×{s}",
   win:"Niveau terminé !", winText:"Tu as répondu juste à {c} questions sur {m}.", fast:"⚡ Rapide ! +{f}",
   pass:"Joker · reste {n} (3)", passed:"Joker utilisé · À toi de jouer", prevPass:"Précédente : joker · {q} = {a}",
-  lbTitle:"Classement", lbNote:"Les meilleurs scores sur cet appareil. Le classement entre amis et mondial arrivera avec la version en ligne.",
+  moreGames:"Autres jeux",
+  lbTitle:"Classement",lbNote:"Les meilleurs scores sur cet appareil. Le classement entre amis et mondial arrivera avec la version en ligne.",
   lbEmpty:"Pas encore de score. Joue une partie, écris ton nom et entre dans la liste !", namePh:"Ton nom", save:"Enregistrer au classement", saved:"Enregistré · tu es {r}e", lbStage:"Étape {n}", toast:"Étape {n} : {name}",
   paused:"Pause", pausedHint:"Appuie sur P ou Échap pour reprendre", cont:"Reprendre", menu:"Menu",
   over:"Partie terminée", newBest:"Nouveau record !", best:"Record : {n}", summary:"{tier} · Étape {n} · {l} lignes · {acc} % juste",
