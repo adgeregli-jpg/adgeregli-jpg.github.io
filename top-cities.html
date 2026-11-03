@@ -1,3 +1,6 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Top Cities</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,12 +52,12 @@ button:focus-visible,select:focus-visible{outline:3px solid var(--accent);outlin
 .btn{height:44px;padding:0 18px;border-radius:12px;border:0;font:800 16px var(--body);background:var(--paper2);color:var(--ink);cursor:pointer}
 .btn.primary{background:var(--accent);color:#fff;box-shadow:0 2px 0 #c25200}
 .x{background:transparent;border:0;font-size:26px;line-height:1;width:36px;height:36px;border-radius:10px;cursor:pointer;color:var(--muted)}
-#touch .tb{position:fixed;border-radius:50%;background:rgba(31,43,51,.22);border:2px solid rgba(255,255,255,.6);display:grid;place-items:center;touch-action:none;color:#fff}
-#touch .tb svg{width:38px;height:38px}
-#touch .tb.on{background:rgba(255,122,26,.55)}
-#tL{width:78px;height:78px;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-#tR{width:78px;height:78px;left:calc(108px + env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-#tJ{width:96px;height:96px;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+#touch .tb{position:fixed;z-index:4;border-radius:50%;background:rgba(31,43,51,.28);border:2px solid rgba(255,255,255,.7);display:grid;place-items:center;touch-action:none;-webkit-touch-callout:none;color:#fff}
+#touch .tb svg{width:42px;height:42px;pointer-events:none}
+#touch .tb.on{background:rgba(255,122,26,.6)}
+#tL{width:86px;height:86px;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+#tR{width:86px;height:86px;left:calc(114px + env(safe-area-inset-left,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+#tJ{width:106px;height:106px;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px))}
 #done,#quiz{position:fixed;inset:0;display:grid;place-items:center;background:rgba(20,30,36,.45);padding:16px;z-index:3}
 #done[hidden],#quiz[hidden]{display:none}
 .qopts{display:flex;flex-direction:column;gap:8px}
@@ -73,13 +76,13 @@ button:focus-visible,select:focus-visible{outline:3px solid var(--accent);outlin
 .btns{display:flex;gap:8px;flex-wrap:wrap}
 #toast{position:fixed;left:50%;top:calc(62px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:rgba(31,43,51,.86);color:var(--paper);padding:9px 14px;border-radius:12px;font-weight:700;font-size:14px;width:max-content;max-width:min(560px,calc(100vw - 32px));text-align:center;pointer-events:none;line-height:1.35}
 /* açılış: haritanın üstünde, altta başlık + Başla; harita ve zıplayan top üstte görünür */
-#intro{position:fixed;inset:0;z-index:10;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(to bottom,rgba(22,58,72,0) 42%,rgba(22,58,72,.9) 70%,rgba(22,58,72,.96) 100%);padding:24px 24px calc(56px + env(safe-area-inset-bottom,0px));box-sizing:border-box;text-align:center;color:var(--paper)}
+#intro{position:fixed;inset:0;z-index:10;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(to bottom,rgba(22,58,72,0) 42%,rgba(22,58,72,.9) 70%,rgba(22,58,72,.96) 100%);padding:24px 24px calc(64px + env(safe-area-inset-bottom,0px));box-sizing:border-box;text-align:center;color:var(--paper)}
 .intro-in{display:flex;flex-direction:column;align-items:center;gap:6px}
 .intro-name{font-family:var(--display);font-weight:800;font-size:clamp(44px,10vw,84px);line-height:.95;letter-spacing:.02em;text-shadow:0 2px 0 rgba(0,0,0,.25);animation:rise .7s ease-out .2s both}
 .intro-title{font-family:var(--display);font-weight:600;font-size:clamp(18px,3.6vw,26px);opacity:.85;animation:rise .6s ease-out .5s both}
-#introGo{margin-top:14px;min-width:160px;height:52px;font-size:18px;animation:rise .6s ease-out .8s both}
+#introGo{margin-top:14px;min-width:200px;height:58px;font-size:21px;border-radius:14px;animation:rise .6s ease-out .8s both}
 .intro-langs{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;justify-content:center;animation:rise .6s ease-out .9s both}
-.intro-langs button{height:36px;min-width:46px;padding:0 10px;border-radius:10px;border:2px solid rgba(251,243,226,.45);background:transparent;color:var(--paper);font:800 14px var(--body);cursor:pointer}
+.intro-langs button{height:42px;min-width:52px;padding:0 10px;border-radius:10px;border:2px solid rgba(251,243,226,.45);background:transparent;color:var(--paper);font:800 16px var(--body);cursor:pointer}
 .intro-langs button[aria-pressed="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
 body:has(#intro:not([hidden])) .credit{z-index:11;display:block}
 body:has(#intro:not([hidden])) :is(#mapbar,#card,#mapHint){visibility:hidden}
@@ -1782,10 +1785,14 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>{const k=e.code;if(k==='ArrowLeft'||k==='KeyA')input.l=false;else if(k==='ArrowRight'||k==='KeyD')input.r=false;else if(k==='Space'||k==='ArrowUp'||k==='KeyW')input.j=false});
 addEventListener('blur',()=>{input.l=input.r=input.j=false});
-function bindTouch(id,key){const el=$(id);
-  const on=e=>{e.preventDefault();audio();try{el.setPointerCapture(e.pointerId)}catch(_){}if(key==='j'&&!input.j)jumpPress();input[key]=true;el.classList.add('on')};
-  const off=()=>{input[key]=false;el.classList.remove('on')};
-  el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);el.addEventListener('lostpointercapture',off)}
+// dokunmatik butonlar: her parmak ayrı izlenir; dokunmada tarayıcı zaten olayı butona bağlar,
+// ayrıca setPointerCapture çağrılmaz (bazı telefonlarda hemen bırakma olayı üretip basışı iptal ediyordu)
+function bindTouch(id,key){const el=$(id),ids=new Set();
+  const on=e=>{e.preventDefault();audio();ids.add(e.pointerId);if(key==='j'&&!input.j)jumpPress();input[key]=true;el.classList.add('on')};
+  const off=e=>{ids.delete(e.pointerId);if(ids.size)return;input[key]=false;el.classList.remove('on')};
+  el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);
+  el.addEventListener('contextmenu',e=>e.preventDefault());
+  el.addEventListener('touchstart',e=>e.preventDefault(),{passive:false})}
 bindTouch('tL','l');bindTouch('tR','r');bindTouch('tJ','j');
 
 // ================= ARAYÜZ =================
