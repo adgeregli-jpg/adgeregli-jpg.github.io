@@ -109,7 +109,7 @@ body:has(#intro:not([hidden])) :is(#mapbar,#card,#mapHint){visibility:hidden}
   <button class="chip" id="muteBtn" aria-label="Ses"></button>
 </div>
 <div class="hint" id="mapHint"><span data-i="hint1"></span><br><span data-i="hint2"></span></div>
-<div class="credit" id="credit"><span data-i="producer"></span><b>GÖKHAN ATALAR</b><br><small style="opacity:.6">v8</small></div>
+<div class="credit" id="credit"><span data-i="producer"></span><b>GÖKHAN ATALAR</b><br><small style="opacity:.6">v9</small></div>
 
 <div id="card" hidden>
   <div class="card-top">
@@ -1853,10 +1853,11 @@ tap('introGo',closeIntro);
 // ================= DÖNGÜ =================
 let last=performance.now(),acc=0;
 function frame(now){
-  const dt=Math.min(0.05,(now-last)/1000);last=now;T+=dt;
+  // ilk karede rAF zamanı performance.now()'dan geride olabilir: negatif dt T'yi sıfırın altına itmesin
+  requestAnimationFrame(frame);
+  const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now;T+=dt;
   if(mode==='play'&&game){acc+=dt;while(acc>=STEP){stepGame(STEP);acc-=STEP;if(!game)break}if(game){updateCamera(dt);drawPlay()}}
   else{acc=0;drawMap()}
-  requestAnimationFrame(frame);
 }
 resize();renderAudioBtns();applyLang();updateTotal();
 selectCountry(COUNTRIES[0]);
