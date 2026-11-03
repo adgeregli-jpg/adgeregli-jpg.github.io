@@ -53,11 +53,11 @@ button:focus-visible,select:focus-visible{outline:3px solid var(--accent);outlin
 .btn.primary{background:var(--accent);color:#fff;box-shadow:0 2px 0 #c25200}
 .x{background:transparent;border:0;font-size:26px;line-height:1;width:36px;height:36px;border-radius:10px;cursor:pointer;color:var(--muted)}
 #touch .tb{position:fixed;z-index:4;border-radius:50%;background:rgba(31,43,51,.28);border:2px solid rgba(255,255,255,.7);display:grid;place-items:center;touch-action:none;-webkit-touch-callout:none;color:#fff}
-#touch .tb svg{width:42px;height:42px;pointer-events:none}
+#touch .tb svg{width:30px;height:30px;pointer-events:none}
 #touch .tb.on{background:rgba(255,122,26,.6)}
-#tL{width:86px;height:86px;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px))}
-#tR{width:86px;height:86px;left:calc(114px + env(safe-area-inset-left,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px))}
-#tJ{width:106px;height:106px;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+#tL{width:64px;height:64px;left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+#tR{width:64px;height:64px;left:calc(88px + env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+#tJ{width:78px;height:78px;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px))}
 #done,#quiz{position:fixed;inset:0;display:grid;place-items:center;background:rgba(20,30,36,.45);padding:16px;z-index:3}
 #done[hidden],#quiz[hidden]{display:none}
 .qopts{display:flex;flex-direction:column;gap:8px}
@@ -109,7 +109,7 @@ body:has(#intro:not([hidden])) :is(#mapbar,#card,#mapHint){visibility:hidden}
   <button class="chip" id="muteBtn" aria-label="Ses"></button>
 </div>
 <div class="hint" id="mapHint"><span data-i="hint1"></span><br><span data-i="hint2"></span></div>
-<div class="credit" id="credit"><span data-i="producer"></span><b>GÖKHAN ATALAR</b><br><small style="opacity:.6">v9</small></div>
+<div class="credit" id="credit"><span data-i="producer"></span><b>GÖKHAN ATALAR</b><br><small style="opacity:.6">v10</small></div>
 
 <div id="card" hidden>
   <div class="card-top">
@@ -1172,7 +1172,8 @@ function updateCamera(dt,snap){
   const g=game,b=g.ball,L=g.L,s=view.s,vw=W/s,vh=H/s;
   let tx_=b.x+clamp(b.vx*0.3,-160,160),ty=b.y-40;
   tx_=clamp(tx_,vw/2,Math.max(vw/2,L.width-vw/2));
-  ty=Math.min(ty,L.viewBottom-vh/2);
+  // dokunmatik butonlar açıkken zemin buton sırasının üstünde kalsın, top okların arkasına girmesin
+  ty=Math.min(ty,L.viewBottom-vh/2+(touchOn?100/s:0));
   const k=snap?1:1-Math.exp(-6*dt);cam.x+=(tx_-cam.x)*k;cam.y+=(ty-cam.y)*k;
 }
 
