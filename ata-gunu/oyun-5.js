@@ -48,10 +48,10 @@ function actbar(){
   if(want==='tv')$('#aTv').onclick=()=>stopTV(false);if(want==='ball')$('#aK').onclick=kick;
 }
 let prev=performance.now(),hudT=0;
-function loop(now){const dt=Math.min(.05,(now-prev)/1000);prev=now;update(dt);draw();hudT+=dt;if(hudT>.2){hudT=0;hud();updChips();actbar();if(P.mode==='tv'||G.trap)banner()}requestAnimationFrame(loop)}
+function loop(now){const dt=Math.min(.05,(now-prev)/1000);prev=now;update(dt);updCam(dt);draw();hudT+=dt;if(hudT>.2){hudT=0;hud();updChips();actbar();if(P.mode==='tv'||G.trap)banner()}requestAnimationFrame(loop)}
 
 // ===================== girdi =====================
-function toLogical(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*H]}
+function toLogical(e){const r=cv.getBoundingClientRect();return[CAM.x+(e.clientX-r.left)/r.width*W/CAM.z,CAM.y+(e.clientY-r.top)/r.height*H/CAM.z]}
 cv.addEventListener('pointerdown',e=>{
   if(G.paused||G.overlay)return;const[x,y]=toLogical(e);
   if(P.mode==='ball'){kick();return}
@@ -83,12 +83,13 @@ $('#bFull').onclick=()=>{
   try{const p=el.requestFullscreen&&el.requestFullscreen();if(p&&p.catch)p.catch(()=>{$('#bFull').textContent='Tam ekran açılamadı'})}catch(e){}
 };
 document.addEventListener('fullscreenchange',()=>{$('#bFull').textContent=document.fullscreenElement?'Tam ekrandan çık':'Tam ekran';setTimeout(fit,50)});
+$('#bZoom').onclick=()=>{zoomOn=!zoomOn;store.set('atagunu.zoom',zoomOn);zoomLabel()};
 $('#bSnd').onclick=()=>{muted=!muted;$('#bSnd').textContent='Ses: '+(muted?'kapalı':'açık');$('#bSnd').setAttribute('aria-pressed',!muted)};
 
 // ===================== açılış =====================
 function boot(data){
   if(data&&data.day){G.day=data.day;G.score=data.score||0;G.vit=data.vit??70;G.brain=data.brain??70}
-  fit();hud();renderTasks();
+  fit();updCam(0,true);zoomLabel();hud();renderTasks();
   startModal();requestAnimationFrame(loop);
 }
 try{window.claude?.hot?.snapshot?.(()=>({day:G.day,score:G.score,vit:G.vit,brain:G.brain}))}catch(e){}

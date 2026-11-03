@@ -2,6 +2,19 @@
 const cv=$('#cv'),ctx=cv.getContext('2d');cv.tabIndex=0;
 function fit(){const dpr=Math.min(2,window.devicePixelRatio||1),w=cv.clientWidth||1000;cv.width=Math.round(w*dpr);cv.height=Math.round(w*620/1000*dpr)}
 window.addEventListener('resize',fit);
+// kamera: yakın görünümde evi büyütüp çocuğu takip eder (x,y = görünen alanın sol üstü)
+const CAM={x:0,y:0,z:1},ZOOM=1.75;
+let zoomOn=store.get('atagunu.zoom')!==false;
+function camTarget(){if(G.ball||P.mode==='ball')return[840,440];if(P.mode==='sleep')return[110,130];return[P.x,(P.mode==='tv'?470:P.y)-20]}
+function updCam(dt,snap){const f=snap?1:Math.min(1,dt*5);CAM.z+=((zoomOn?ZOOM:1)-CAM.z)*f;
+  const vw=W/CAM.z,vh=H/CAM.z,[tx,ty]=camTarget();CAM.x+=(clamp(tx-vw/2,0,W-vw)-CAM.x)*f;CAM.y+=(clamp(ty-vh/2,0,H-vh)-CAM.y)*f}
+function zoomLabel(){$('#bZoom').textContent=zoomOn?'Tüm evi gör':'Yakınlaş';$('#bZoom').setAttribute('aria-pressed',zoomOn)}
+// hedef ekran dışındaysa kenarda yön oku
+function edgeArrow(c){const tg=targetObj();if(!tg||G.overlay||P.mode==='ball')return;const[x,y,w,h]=tg.r;
+  const sx=(x+w/2-CAM.x)*CAM.z,sy=(y+h/2-CAM.y)*CAM.z;if(sx>0&&sx<W&&sy>0&&sy<H)return;
+  const dx=sx-W/2,dy=sy-H/2,s=Math.min((W/2-40)/Math.max(1e-6,Math.abs(dx)),(H/2-40)/Math.max(1e-6,Math.abs(dy)));
+  c.save();c.translate(W/2+dx*s,H/2+dy*s);c.rotate(Math.atan2(dy,dx));const p=1+Math.sin(G.time*6)*.12;c.scale(p,p);
+  c.fillStyle='#e39a2d';c.strokeStyle='#1d2b36';c.lineWidth=3;c.beginPath();c.moveTo(26,0);c.lineTo(-12,-20);c.lineTo(-4,0);c.lineTo(-12,20);c.closePath();c.fill();c.stroke();c.restore()}
 function rr(c,x,y,w,h,r){c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,r);else c.rect(x,y,w,h)}
 function ell(c,x,y,rx,ry){c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2)}
 
@@ -202,7 +215,7 @@ function bubble(c,x,y,text,warn){
 function targetObj(){const order=['baby','brushM','dress','school','clothes','lesson','brushN','sleep'];const t=order.map(hasTask).find(Boolean);return t?OBJ.find(o=>o.id===TARGET[t.id]):null}
 
 function draw(){
-  const k=cv.width/W;ctx.setTransform(k,0,0,k,0,0);const c=ctx,t=G.time;
+  const k=cv.width/W,kz=k*CAM.z;ctx.setTransform(kz,0,0,kz,-CAM.x*kz,-CAM.y*kz);const c=ctx,t=G.time;
   c.fillStyle='#33414d';c.fillRect(0,0,W,H);
   drawFloors(c);drawFurniture(c);drawWalls(c);
   if(G.trap&&G.trap.type!=='bed')drawTrap(c,G.trap);
@@ -247,6 +260,8 @@ function draw(){
   for(const f of G.floats){const a=clamp(1-(f.age-1.3)/.5,0,1),yy=f.y-f.age*22;c.globalAlpha=a;c.textAlign='center';
     c.font='800 15px "Baloo 2",sans-serif';c.lineWidth=4;c.strokeStyle='#fff';const fx=clamp(f.x,120,880);c.strokeText(f.t,fx,yy);c.fillStyle=f.c;c.fillText(f.t,fx,yy);
     if(f.sub){c.font='800 12px Nunito,sans-serif';c.strokeText(f.sub,fx,yy+15);c.fillText(f.sub,fx,yy+15)}c.globalAlpha=1}
+  // buradan sonrası ekran düzleminde (kameradan bağımsız)
+  c.setTransform(k,0,0,k,0,0);edgeArrow(c);
   // kaplama yazı
   if(G.overlay){const o=G.overlay,a=Math.min(1,o.t/.3,(o.dur-o.t)/.3);c.globalAlpha=Math.max(0,a);c.fillStyle=o.dark?'rgba(18,26,40,.82)':'rgba(29,43,54,.72)';c.fillRect(0,0,W,H);
     c.fillStyle='#fff';c.textAlign='center';c.font='800 48px "Baloo 2",sans-serif';c.fillText(o.text,W/2,H/2-6);
