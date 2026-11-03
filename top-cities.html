@@ -78,6 +78,9 @@ button:focus-visible,select:focus-visible{outline:3px solid var(--accent);outlin
 .intro-name{font-family:var(--display);font-weight:800;font-size:clamp(44px,10vw,84px);line-height:.95;letter-spacing:.02em;text-shadow:0 2px 0 rgba(0,0,0,.25);animation:rise .7s ease-out .2s both}
 .intro-title{font-family:var(--display);font-weight:600;font-size:clamp(18px,3.6vw,26px);opacity:.85;animation:rise .6s ease-out .5s both}
 #introGo{margin-top:14px;min-width:160px;height:52px;font-size:18px;animation:rise .6s ease-out .8s both}
+.intro-langs{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;justify-content:center;animation:rise .6s ease-out .9s both}
+.intro-langs button{height:36px;min-width:46px;padding:0 10px;border-radius:10px;border:2px solid rgba(251,243,226,.45);background:transparent;color:var(--paper);font:800 14px var(--body);cursor:pointer}
+.intro-langs button[aria-pressed="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
 body:has(#intro:not([hidden])) .credit{z-index:11;display:block}
 body:has(#intro:not([hidden])) :is(#mapbar,#card,#mapHint){visibility:hidden}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -178,6 +181,7 @@ body:has(#intro:not([hidden])) :is(#mapbar,#card,#mapHint){visibility:hidden}
     <div class="intro-name">Top Cities</div>
     <div class="intro-title" data-i="sub"></div>
     <button class="btn primary" id="introGo" data-i="start"></button>
+    <div class="intro-langs" id="introLangs" role="group" aria-label="Dil / Language"></div>
   </div>
 </div>
 
@@ -1796,12 +1800,16 @@ function applyLang(){
   document.documentElement.lang=lang;
   document.querySelectorAll('[data-i]').forEach(el=>{el.textContent=tx(el.dataset.i)});
   $('langSel').value=lang;
+  document.querySelectorAll('#introLangs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===lang?'true':'false'));
   if(map.sel&&!$('card').hidden)selectCountry(map.sel);
   if(game){setHudTitle(game.c);updateHud();if(!$('done').hidden)showDone()}
   renderTouchBtns();
 }
 const ls=$('langSel');LANGS.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=LANG_LABEL[l];ls.appendChild(o)});
-ls.addEventListener('change',()=>{lang=ls.value;store('topcities-lang',lang);applyLang()});
+function setLang(l){lang=l;store('topcities-lang',lang);applyLang()}
+ls.addEventListener('change',()=>setLang(ls.value));
+// açılış ekranında 5 dil butonu
+const il=$('introLangs');LANGS.forEach(l=>{const b=document.createElement('button');b.type='button';b.dataset.l=l;b.textContent=l.toUpperCase();b.title=LANG_LABEL[l].split(' · ')[1];b.onclick=()=>setLang(l);il.appendChild(b)});
 $('muteBtn').onclick=toggleMute;$('muteBtn2').onclick=toggleMute;$('musicBtn').onclick=toggleMusic;
 $('cClose').onclick=()=>{map.sel=null;$('card').hidden=true;$('mapHint').hidden=false};
 $('cPlay').onclick=()=>{if(map.sel){audio();startLevel(map.sel)}};
