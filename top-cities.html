@@ -112,7 +112,7 @@ body:has(#intro:not([hidden])) :is(#mapbar,#card,#mapHint){visibility:hidden}
   <button class="chip" id="muteBtn" aria-label="Ses"></button>
 </div>
 <div class="hint" id="mapHint"><span data-i="hint1"></span><br><span data-i="hint2"></span></div>
-<div class="credit" id="credit"><span data-i="producer"></span><b>GÖKHAN ATALAR</b><br><small style="opacity:.6">v11</small></div>
+<div class="credit" id="credit"><span data-i="producer"></span><b>GÖKHAN ATALAR</b><br><small style="opacity:.6">v12</small></div>
 
 <div id="card" hidden>
   <div class="card-top">
@@ -545,7 +545,7 @@ document.addEventListener('visibilitychange',()=>{if(!actx)return;if(document.hi
 
 // ---------- veri: tema renkleri ----------
 const THEMES={
-  bridge:{sky:['#8cc4e6','#fde6c2'],far:'#a7b8c3',mid:'#8e9faa',ground:'#7a6553',top:'#79a94a',spike:'#8f989f',bug:'#3b3346',plat:'#8a6a48',water:'#2f7f9a'},
+  bridge:{sky:['#8cc4e6','#fde6c2'],far:'#a7b8c3',mid:'#8e9faa',ground:'#7a6553',top:'#79a94a',spike:'#111111',bug:'#3b3346',plat:'#8a6a48',water:'#2f7f9a'},
   city:{sky:['#9fcfee','#f3ead2'],far:'#b5c4ce',mid:'#97a8b4',ground:'#6f5b4b',top:'#77ad4b',spike:'#8f989f',bug:'#3b3346',plat:'#7d8a94',water:'#3d7fa6'},
   rain:{sky:['#8d9aa6','#c9d0d4'],far:'#a2acb4',mid:'#87939c',ground:'#5f574f',top:'#6d9a4a',iceFill:'#6f8796',iceTop:'#a9bfcc',spike:'#8f989f',bug:'#3b3346',plat:'#7d8a94'},
   arena:{sky:['#f6c27a','#fdeccc'],far:'#e3b07a',mid:'#c98d58',ground:'#b8743f',top:'#e2b26c',spike:'#6b4a2a',bug:'#3b2418',plat:'#a87b4f'},
