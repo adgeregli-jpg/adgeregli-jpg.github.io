@@ -109,7 +109,7 @@ body:has(#intro:not([hidden])) :is(#mapbar,#card,#mapHint){visibility:hidden}
   <button class="chip" id="muteBtn" aria-label="Ses"></button>
 </div>
 <div class="hint" id="mapHint"><span data-i="hint1"></span><br><span data-i="hint2"></span></div>
-<div class="credit" id="credit"><span data-i="producer"></span><b>GÖKHAN ATALAR</b></div>
+<div class="credit" id="credit"><span data-i="producer"></span><b>GÖKHAN ATALAR</b><br><small style="opacity:.6">v8</small></div>
 
 <div id="card" hidden>
   <div class="card-top">
@@ -388,7 +388,7 @@ const QX={
 
 // ---------- ses (Web Audio ile sentez) ----------
 let actx=null,muted=load('topcities-mute')==='1',musicOn=load('topcities-music')!=='0',noiseBuf=null;
-function audio(){if(!actx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;try{actx=new AC()}catch(e){return null}}if(actx.state==='suspended'&&!document.hidden)actx.resume();return actx}
+function audio(){if(!actx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;try{actx=new AC()}catch(e){return null}}if(actx.state==='suspended'&&!document.hidden){try{const p=actx.resume();if(p&&p.catch)p.catch(()=>{})}catch(e){}}return actx}
 function getNoise(a){if(!noiseBuf){const r=mulberry32(99),len=Math.floor(a.sampleRate*0.6);noiseBuf=a.createBuffer(1,len,a.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=r()*2-1}return noiseBuf}
 function tone(f0,f1,dur,type,vol,delay){if(muted)return;const a=audio();if(!a)return;const t=a.currentTime+(delay||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.15,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+0.03)}
 function noiseHit(a,dest,t,dur,vol,type,freq){const src=a.createBufferSource();src.buffer=getNoise(a);const f=a.createBiquadFilter();f.type=type;f.frequency.value=freq;const g=a.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);src.connect(f).connect(g).connect(dest);src.start(t,(t*7.3)%0.4);src.stop(t+dur+0.02)}
@@ -712,7 +712,7 @@ function selectCountry(c){
 }
 function updateTotal(){let n=0;for(const c of COUNTRIES)n+=(save[c.id]&&save[c.id].stars)||0;$('totalStars').innerHTML='<span class="gold">★</span> '+n+' / 180'}
 
-cv.addEventListener('pointerdown',e=>{audio();if(mode!=='map')return;cv.setPointerCapture(e.pointerId);map.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY});
+cv.addEventListener('pointerdown',e=>{try{audio()}catch(x){}if(mode!=='map')return;try{cv.setPointerCapture(e.pointerId)}catch(x){}map.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY});
   if(map.pointers.size===1)map.moved=false;
   if(map.pointers.size===2){const[a,b]=[...map.pointers.values()];map.pinch={d:Math.hypot(a.x-b.x,a.y-b.y)};map.moved=true}});
 cv.addEventListener('pointermove',e=>{if(mode!=='map')return;const p=map.pointers.get(e.pointerId);if(!p)return;
@@ -1785,14 +1785,22 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>{const k=e.code;if(k==='ArrowLeft'||k==='KeyA')input.l=false;else if(k==='ArrowRight'||k==='KeyD')input.r=false;else if(k==='Space'||k==='ArrowUp'||k==='KeyW')input.j=false});
 addEventListener('blur',()=>{input.l=input.r=input.j=false});
-// dokunmatik butonlar: her parmak ayrı izlenir; dokunmada tarayıcı zaten olayı butona bağlar,
-// ayrıca setPointerCapture çağrılmaz (bazı telefonlarda hemen bırakma olayı üretip basışı iptal ediyordu)
+// dokunmatik butonlar: telefonda doğrudan touch olayları (her parmak ayrı izlenir; touchend her zaman
+// dokunuşun başladığı butona gelir), fare/kalem için pointer olayları
+const touchReleases=[];
 function bindTouch(id,key){const el=$(id),ids=new Set();
-  const on=e=>{e.preventDefault();audio();ids.add(e.pointerId);if(key==='j'&&!input.j)jumpPress();input[key]=true;el.classList.add('on')};
-  const off=e=>{ids.delete(e.pointerId);if(ids.size)return;input[key]=false;el.classList.remove('on')};
-  el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);
+  const press=tid=>{ids.add(tid);if(key==='j'&&!input.j)jumpPress();input[key]=true;el.classList.add('on')};
+  const release=tid=>{ids.delete(tid);if(ids.size)return;input[key]=false;el.classList.remove('on')};
+  el.addEventListener('touchstart',e=>{e.preventDefault();try{audio()}catch(x){}for(const t of e.changedTouches)press('t'+t.identifier)},{passive:false});
+  const tEnd=e=>{e.preventDefault();for(const t of e.changedTouches)release('t'+t.identifier)};
+  el.addEventListener('touchend',tEnd,{passive:false});el.addEventListener('touchcancel',tEnd,{passive:false});
+  el.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return;e.preventDefault();audio();press('p'+e.pointerId)});
+  const pEnd=e=>{if(e.pointerType!=='touch')release('p'+e.pointerId)};
+  el.addEventListener('pointerup',pEnd);el.addEventListener('pointercancel',pEnd);el.addEventListener('pointerleave',pEnd);
   el.addEventListener('contextmenu',e=>e.preventDefault());
-  el.addEventListener('touchstart',e=>e.preventDefault(),{passive:false})}
+  touchReleases.push(()=>{ids.clear();input[key]=false;el.classList.remove('on')})}
+// ekranda hiç parmak kalmadıysa takılı kalmış basışları bırak
+addEventListener('touchend',e=>{if(!e.touches.length)touchReleases.forEach(f=>f())},{passive:true});
 bindTouch('tL','l');bindTouch('tR','r');bindTouch('tJ','j');
 
 // ================= ARAYÜZ =================
@@ -1812,23 +1820,35 @@ function applyLang(){
   if(game){setHudTitle(game.c);updateHud();if(!$('done').hidden)showDone()}
   renderTouchBtns();
 }
-const ls=$('langSel');LANGS.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=LANG_LABEL[l];ls.appendChild(o)});
+const ls=$('langSel');LANGS.forEach(l=>{const o=document.createElement('option');o.value=l;ls.appendChild(o)});
+// dar ekranda dil kutusu sadece kodu gösterir, üst çubuk taşmasın
+function langLabels(){const n=innerWidth<=520;[...ls.options].forEach(o=>{o.textContent=n?o.value.toUpperCase():LANG_LABEL[o.value]})}
+langLabels();addEventListener('resize',langLabels);
 function setLang(l){lang=l;store('topcities-lang',lang);applyLang()}
 ls.addEventListener('change',()=>setLang(ls.value));
 // açılış ekranında 5 dil butonu
 const il=$('introLangs');LANGS.forEach(l=>{const b=document.createElement('button');b.type='button';b.dataset.l=l;b.textContent=l.toUpperCase();b.title=LANG_LABEL[l].split(' · ')[1];b.onclick=()=>setLang(l);il.appendChild(b)});
-$('muteBtn').onclick=toggleMute;$('muteBtn2').onclick=toggleMute;$('musicBtn').onclick=toggleMusic;
-$('cClose').onclick=()=>{map.sel=null;$('card').hidden=true;$('mapHint').hidden=false};
-$('cPlay').onclick=()=>{if(map.sel){audio();startLevel(map.sel)}};
-$('backBtn').onclick=backToMap;
-$('restartBtn').onclick=()=>{if(game&&game.state!=='quiz')startLevel(game.c,game.lives)};
-$('qMap').onclick=backToMap;
-$('touchBtn').onclick=$('touchBtn2').onclick=()=>setTouch(!touchOn,true);
-$('dAgain').onclick=()=>startLevel(game.c);
-$('dMap').onclick=backToMap;
-$('dNext').onclick=()=>{const n=COUNTRIES[game.c.n];if(n){map.sel=n;startLevel(n)}};
-function closeIntro(){if($('intro').hidden)return;audio();$('intro').hidden=true}
-$('introGo').onclick=closeIntro;
+// butonlar: dokunmatikte parmak kalkınca hemen çalışır (bazı telefonlar click üretmiyor), farede click;
+// aynı basış iki kez sayılmasın diye dokunuştan sonraki click yutulur
+function tap(id,fn){const el=$(id);let tt=0;
+  el.addEventListener('touchend',e=>{if(e.changedTouches.length!==1)return;const t=e.changedTouches[0],r=el.getBoundingClientRect();
+    if(t.clientX<r.left||t.clientX>r.right||t.clientY<r.top||t.clientY>r.bottom)return;e.preventDefault();tt=performance.now();safe(fn)},{passive:false});
+  el.addEventListener('click',()=>{if(performance.now()-tt<700)return;safe(fn)})}
+function safe(fn){try{audio()}catch(e){}try{fn()}catch(e){showErr(e)}}
+function showErr(e){showToast('Hata: '+((e&&e.message)||e),6000)}
+addEventListener('error',e=>showErr(e.error||e.message));
+tap('muteBtn',toggleMute);tap('muteBtn2',toggleMute);tap('musicBtn',toggleMusic);
+tap('cClose',()=>{map.sel=null;$('card').hidden=true;$('mapHint').hidden=false});
+tap('cPlay',()=>{if(map.sel)startLevel(map.sel)});
+tap('backBtn',backToMap);
+tap('restartBtn',()=>{if(game&&game.state!=='quiz')startLevel(game.c,game.lives)});
+tap('qMap',backToMap);
+tap('touchBtn',()=>setTouch(!touchOn,true));tap('touchBtn2',()=>setTouch(!touchOn,true));
+tap('dAgain',()=>startLevel(game.c));
+tap('dMap',backToMap);
+tap('dNext',()=>{const n=COUNTRIES[game.c.n];if(n){map.sel=n;startLevel(n)}});
+function closeIntro(){if($('intro').hidden)return;$('intro').hidden=true}
+tap('introGo',closeIntro);
 
 // ================= DÖNGÜ =================
 let last=performance.now(),acc=0;
