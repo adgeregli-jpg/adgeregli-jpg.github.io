@@ -92,6 +92,9 @@ body:has(#intro:not([hidden])) :is(#mapbar,#card,#mapHint){visibility:hidden}
 .chip{flex-shrink:0}
 #banner{position:fixed;left:0;right:0;margin:0 auto;width:max-content;top:26%;background:var(--paper);border-radius:18px;padding:14px 26px 16px;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.3);pointer-events:none;z-index:2;max-width:calc(100vw - 32px);box-sizing:border-box;transition:opacity .4s ease-out;animation:rise .35s ease-out both}
 #banner.out{opacity:0}
+#fact{position:fixed;left:0;right:0;margin:0 auto;top:calc(62px + env(safe-area-inset-top,0px));width:max-content;max-width:min(560px,calc(100vw - 32px));box-sizing:border-box;background:rgba(251,243,226,.94);color:#1f2b33;border-radius:12px;padding:8px 14px 9px;box-shadow:0 6px 18px rgba(0,0,0,.18);pointer-events:none;z-index:2;font-size:14px;line-height:1.35;text-align:center;transition:opacity .5s ease-out;animation:rise .35s ease-out both}
+#fact.out{opacity:0}
+.fact-eb{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#b4500c;margin-bottom:2px}
 .bName{font-family:var(--display);font-weight:800;font-size:clamp(30px,8vw,44px);line-height:1.05;margin:2px 0}
 #hLvl{display:none}
 @media (max-width:350px){ #musicBtn{display:none} }
@@ -109,7 +112,7 @@ body:has(#intro:not([hidden])) :is(#mapbar,#card,#mapHint){visibility:hidden}
   <button class="chip" id="muteBtn" aria-label="Ses"></button>
 </div>
 <div class="hint" id="mapHint"><span data-i="hint1"></span><br><span data-i="hint2"></span></div>
-<div class="credit" id="credit"><span data-i="producer"></span><b>GÖKHAN ATALAR</b><br><small style="opacity:.6">v10</small></div>
+<div class="credit" id="credit"><span data-i="producer"></span><b>GÖKHAN ATALAR</b><br><small style="opacity:.6">v11</small></div>
 
 <div id="card" hidden>
   <div class="card-top">
@@ -178,6 +181,7 @@ body:has(#intro:not([hidden])) :is(#mapbar,#card,#mapHint){visibility:hidden}
   <div class="place" id="bPlace"></div>
 </div>
 <div id="toast" hidden></div>
+<div id="fact" hidden aria-live="polite"><div class="fact-eb" data-i="fact"></div><div id="factTxt"></div></div>
 
 <div id="intro">
   <div class="intro-in">
@@ -233,6 +237,7 @@ const STR={
  touchCtl:['Dokunmatik butonlar','Touch buttons','Touch-Tasten','Botones táctiles','Boutons tactiles'],
  lives:['Can','Lives','Leben','Vidas','Vies'],
  qEyebrow:['Canların bitti','Out of lives','Keine Leben mehr','Sin vidas','Plus de vies'],
+ fact:['Biliyor muydun?','Did you know?','Schon gewusst?','¿Sabías que…?','Le savais-tu ?'],
  qTitle:['{c} hakkında 2 soru','2 questions about {c}','2 Fragen über {c}','2 preguntas sobre {c}','2 questions sur {c}'],
  qSub:['İkisini de bil, 3 can kazan ve oynamaya devam et.','Get both right to earn 3 lives and keep playing.','Beantworte beide richtig und erhalte 3 neue Leben.','Acierta las dos para ganar 3 vidas y seguir jugando.','Réponds juste aux deux pour gagner 3 vies et continuer.'],
  qNum:['Soru {n}/2','Question {n}/2','Frage {n}/2','Pregunta {n}/2','Question {n}/2'],
@@ -283,7 +288,7 @@ const CNAME={
 };
 const PLACE={
  tr:'İstanbul · Boğaz Köprüsü|Istanbul · Bosphorus Bridge|Istanbul · Bosporus-Brücke|Estambul · Puente del Bósforo|Istanbul · Pont du Bosphore',
- fr:'Eyfel Kulesi|Eiffel Tower|Eiffelturm|Torre Eiffel|Tour Eiffel',it:'Pisa Kulesi|Leaning Tower of Pisa|Schiefer Turm von Pisa|Torre de Pisa|Tour de Pise',gb:'Big Ben',
+ fr:'Eyfel Kulesi|Eiffel Tower|Eiffelturm|Torre Eiffel|Tour Eiffel',it:'Pisa Kulesi ve Venedik|Tower of Pisa & Venice|Turm von Pisa & Venedig|Torre de Pisa y Venecia|Tour de Pise et Venise',gb:'Big Ben',
  de:'Otoban ve Neuschwanstein|Autobahn & Neuschwanstein|Autobahn & Neuschwanstein|Autobahn y Neuschwanstein|Autobahn et Neuschwanstein',
  es:'Boğa Arenası|Bullring|Stierkampfarena|Plaza de toros|Arènes',nl:'Yel Değirmenleri|Windmills|Windmühlen|Molinos de viento|Moulins à vent',
  gr:'Akropolis ve Ege|Acropolis & Aegean|Akropolis & Ägäis|Acrópolis y Egeo|Acropole et mer Égée',ch:'Alpler|The Alps|Die Alpen|Los Alpes|Les Alpes',
@@ -312,12 +317,75 @@ const PLACE={
  pg:'Timsahlı Bataklık|Crocodile Swamp|Krokodilsumpf|Pantano de cocodrilos|Marais aux crocodiles',is:'Gayzerler|Geysers|Geysire|Géiseres|Geysers',
  gl:'Buzdağları|Icebergs|Eisberge|Icebergs|Icebergs',aq:'Final: Buz Devi|Finale: Ice Giant|Finale: Eisriese|Final: Gigante de hielo|Finale : Géant de glace'
 };
+// oynarken üstte çıkan kısa bilgi: ünlü yapı/yer, neden ünlü, ne zaman
+const FACT={
+ tr:'Boğaziçi Köprüsü 1973’te açıldı ve Avrupa ile Asya’yı birbirine bağlar.|The Bosphorus Bridge opened in 1973 and links Europe with Asia.|Die Bosporus-Brücke wurde 1973 eröffnet und verbindet Europa mit Asien.|El Puente del Bósforo se abrió en 1973 y une Europa con Asia.|Le pont du Bosphore a ouvert en 1973 et relie l’Europe à l’Asie.',
+ fr:'Eyfel Kulesi 1889 Paris Dünya Fuarı için yapıldı; 330 m yüksekliğindedir.|The Eiffel Tower was built for the 1889 Paris World’s Fair; it is 330 m tall.|Der Eiffelturm wurde für die Weltausstellung 1889 gebaut und ist 330 m hoch.|La Torre Eiffel se construyó para la Exposición Universal de 1889; mide 330 m.|La tour Eiffel a été construite pour l’Exposition universelle de 1889 ; elle mesure 330 m.',
+ it:'Pisa Kulesi 1173’te başlandı, yumuşak zemin yüzünden eğildi. Venedik 100’ü aşkın adacık üzerine kurulu.|The Tower of Pisa was begun in 1173 and leans because of soft ground. Venice is built on over 100 islets.|Der Turm von Pisa wurde 1173 begonnen und neigt sich wegen des weichen Bodens. Venedig steht auf über 100 Inselchen.|La Torre de Pisa se empezó en 1173 y se inclina por el suelo blando. Venecia se asienta sobre más de 100 islotes.|La tour de Pise, commencée en 1173, penche à cause du sol meuble. Venise est bâtie sur plus de 100 îlots.',
+ gb:'Big Ben aslında kuledeki dev çanın adıdır; 1859’dan beri çalar.|Big Ben is really the name of the tower’s great bell; it has rung since 1859.|Big Ben ist eigentlich der Name der großen Glocke im Turm; sie läutet seit 1859.|Big Ben es en realidad el nombre de la gran campana de la torre; suena desde 1859.|Big Ben est en fait le nom de la grosse cloche de la tour ; elle sonne depuis 1859.',
+ de:'Neuschwanstein Şatosu 1869’da Kral II. Ludwig için yapılmaya başlandı. Otobanın bazı kısımlarında hız sınırı yoktur.|Neuschwanstein Castle was begun in 1869 for King Ludwig II. Parts of the Autobahn have no speed limit.|Schloss Neuschwanstein wurde 1869 für König Ludwig II. begonnen. Teile der Autobahn haben kein Tempolimit.|El castillo de Neuschwanstein se empezó en 1869 para el rey Luis II. Algunos tramos de la Autobahn no tienen límite de velocidad.|Le château de Neuschwanstein a été commencé en 1869 pour le roi Louis II. Certaines portions de l’Autobahn n’ont pas de limite de vitesse.',
+ es:'Pamplona’daki San Fermín festivalinde her temmuz boğalar sokaklarda koşar. Madrid’in Las Ventas arenası 1931’de açıldı.|At Pamplona’s San Fermín festival, bulls run through the streets every July. Madrid’s Las Ventas ring opened in 1931.|Beim San-Fermín-Fest in Pamplona rennen jeden Juli Stiere durch die Straßen. Die Arena Las Ventas in Madrid wurde 1931 eröffnet.|En los Sanfermines de Pamplona los toros corren por las calles cada julio. La plaza de Las Ventas de Madrid se abrió en 1931.|À la San Fermín de Pampelune, les taureaux courent dans les rues chaque juillet. Les arènes de Las Ventas à Madrid ont ouvert en 1931.',
+ nl:'Kinderdijk’teki 19 yel değirmeni 1740 civarında yapıldı; deniz seviyesinin altındaki topraktan su pompalarlar.|The 19 windmills of Kinderdijk were built around 1740 to pump water off land below sea level.|Die 19 Windmühlen von Kinderdijk entstanden um 1740 und pumpen Wasser aus Land unter dem Meeresspiegel.|Los 19 molinos de Kinderdijk se construyeron hacia 1740 para sacar agua de tierras bajo el nivel del mar.|Les 19 moulins de Kinderdijk ont été bâtis vers 1740 pour pomper l’eau de terres sous le niveau de la mer.',
+ gr:'Akropolis’teki Parthenon, MÖ 447–432 yılları arasında tanrıça Atena için yapıldı.|The Parthenon on the Acropolis was built for the goddess Athena in 447–432 BC.|Der Parthenon auf der Akropolis wurde 447–432 v. Chr. für die Göttin Athene gebaut.|El Partenón de la Acrópolis se construyó para la diosa Atenea entre 447 y 432 a. C.|Le Parthénon de l’Acropole a été bâti pour la déesse Athéna entre 447 et 432 av. J.-C.',
+ ch:'İsviçre Alpleri’ndeki Matterhorn 4.478 m yüksekliğindedir; zirvesine ilk kez 1865’te çıkıldı.|The Matterhorn in the Swiss Alps is 4,478 m high; it was first climbed in 1865.|Das Matterhorn in den Schweizer Alpen ist 4478 m hoch; es wurde 1865 erstmals bestiegen.|El Cervino, en los Alpes suizos, mide 4478 m; se escaló por primera vez en 1865.|Le Cervin, dans les Alpes suisses, culmine à 4478 m ; il a été gravi pour la première fois en 1865.',
+ no:'Norveç fiyortlarını buzullar oydu; Geirangerfjord 2005’ten beri UNESCO Dünya Mirası.|Norway’s fjords were carved by glaciers; Geirangerfjord has been a UNESCO site since 2005.|Norwegens Fjorde wurden von Gletschern geformt; der Geirangerfjord ist seit 2005 UNESCO-Welterbe.|Los fiordos de Noruega los excavaron los glaciares; el Geirangerfjord es Patrimonio de la UNESCO desde 2005.|Les fjords de Norvège ont été creusés par les glaciers ; le Geirangerfjord est classé à l’UNESCO depuis 2005.',
+ pt:'Lizbon’un sarı 28 numaralı tramvayı 1914’ten beri dik ve dar sokaklarda çalışır.|Lisbon’s yellow tram 28 has climbed the steep, narrow streets since 1914.|Lissabons gelbe Tram 28 fährt seit 1914 durch die steilen, engen Gassen.|El tranvía amarillo 28 de Lisboa recorre sus calles empinadas desde 1914.|Le tramway jaune 28 de Lisbonne gravit les rues étroites et pentues depuis 1914.',
+ ua:'Ukrayna dünyanın en büyük ayçiçeği yağı üreticilerinden biridir; uçsuz bucaksız ayçiçeği tarlaları ülkenin simgesidir.|Ukraine is one of the world’s biggest sunflower oil producers; its endless sunflower fields are a national symbol.|Die Ukraine ist einer der größten Sonnenblumenöl-Produzenten der Welt; die endlosen Felder sind ein Symbol des Landes.|Ucrania es uno de los mayores productores de aceite de girasol; sus campos infinitos son un símbolo del país.|L’Ukraine est l’un des plus grands producteurs d’huile de tournesol ; ses champs à perte de vue sont un symbole du pays.',
+ pl:'Wieliczka Tuz Madeni 13. yüzyıldan beri kazıldı; yerin altında tamamen tuzdan oyulmuş bir şapeli var.|The Wieliczka Salt Mine was dug from the 13th century; underground it has a chapel carved entirely from salt.|Das Salzbergwerk Wieliczka wird seit dem 13. Jahrhundert betrieben; unter Tage gibt es eine ganz aus Salz gehauene Kapelle.|La mina de sal de Wieliczka se explota desde el siglo XIII; bajo tierra tiene una capilla tallada en sal.|La mine de sel de Wieliczka est exploitée depuis le XIIIe siècle ; sous terre, une chapelle est entièrement taillée dans le sel.',
+ ru:'Moskova’daki Aziz Vasil Katedrali 1561’de tamamlandı; renkli soğan kubbeleriyle ünlüdür.|St Basil’s Cathedral in Moscow was finished in 1561 and is famous for its colourful onion domes.|Die Basilius-Kathedrale in Moskau wurde 1561 vollendet und ist für ihre bunten Zwiebeltürme berühmt.|La catedral de San Basilio de Moscú se terminó en 1561 y es famosa por sus cúpulas de colores.|La cathédrale Saint-Basile de Moscou, achevée en 1561, est célèbre pour ses bulbes colorés.',
+ jp:'Fuji Dağı 3.776 m ile Japonya’nın en yüksek dağıdır. Şinkansen hızlı treni 1964’te çalışmaya başladı.|Mount Fuji, at 3,776 m, is Japan’s highest peak. The Shinkansen bullet train began running in 1964.|Der Fuji ist mit 3776 m Japans höchster Berg. Der Shinkansen fährt seit 1964.|El monte Fuji, con 3776 m, es el pico más alto de Japón. El tren bala Shinkansen empezó a circular en 1964.|Le mont Fuji, 3776 m, est le plus haut sommet du Japon. Le Shinkansen circule depuis 1964.',
+ cn:'Çin Seddi’nin bugün görülen kısmının çoğu Ming Hanedanı döneminde (1368–1644) yapıldı.|Most of the Great Wall you see today was built during the Ming dynasty (1368–1644).|Der Großteil der heutigen Chinesischen Mauer entstand in der Ming-Dynastie (1368–1644).|La mayor parte de la Gran Muralla actual se construyó en la dinastía Ming (1368–1644).|L’essentiel de la Grande Muraille actuelle date de la dynastie Ming (1368–1644).',
+ in:'Tac Mahal 1632–1653 yılları arasında Şah Cihan tarafından eşi Mümtaz Mahal’in anısına yapıldı.|The Taj Mahal was built in 1632–1653 by Shah Jahan in memory of his wife Mumtaz Mahal.|Das Taj Mahal wurde 1632–1653 von Shah Jahan zum Gedenken an seine Frau Mumtaz Mahal erbaut.|El Taj Mahal lo construyó Shah Jahan entre 1632 y 1653 en memoria de su esposa Mumtaz Mahal.|Le Taj Mahal a été bâti de 1632 à 1653 par Shah Jahan en mémoire de son épouse Mumtaz Mahal.',
+ kr:'Seul gece ışıklarıyla ünlü dev bir şehirdir; 1988 Yaz Olimpiyatları’na ev sahipliği yaptı.|Seoul is a huge city famous for its night lights; it hosted the 1988 Summer Olympics.|Seoul ist eine riesige Stadt, berühmt für ihre Lichter; 1988 war sie Gastgeber der Sommerspiele.|Seúl es una ciudad enorme famosa por sus luces; acogió los Juegos Olímpicos de 1988.|Séoul est une immense ville célèbre pour ses lumières ; elle a accueilli les Jeux olympiques de 1988.',
+ th:'Damnoen Saduak yüzen pazarı, 1860’larda kazılan bir kanal üzerinde kurulur; satıcılar kayıklardan satış yapar.|The Damnoen Saduak floating market sits on a canal dug in the 1860s; vendors sell from boats.|Der schwimmende Markt Damnoen Saduak liegt an einem in den 1860er-Jahren gegrabenen Kanal; verkauft wird vom Boot aus.|El mercado flotante de Damnoen Saduak está en un canal excavado en la década de 1860; se vende desde barcas.|Le marché flottant de Damnoen Saduak se tient sur un canal creusé dans les années 1860 ; on y vend depuis des barques.',
+ id:'Endonezya’da 120’den fazla aktif yanardağ vardır; Krakatau 1883’te dünyanın duyduğu en büyük patlamalardan birini yaptı.|Indonesia has over 120 active volcanoes; Krakatoa’s 1883 eruption was one of the loudest ever heard.|Indonesien hat über 120 aktive Vulkane; der Ausbruch des Krakatau 1883 war einer der lautesten überhaupt.|Indonesia tiene más de 120 volcanes activos; la erupción del Krakatoa en 1883 fue de las más ruidosas de la historia.|L’Indonésie compte plus de 120 volcans actifs ; l’éruption du Krakatoa en 1883 fut l’une des plus bruyantes jamais entendues.',
+ sa:'Rub’ al-Hali (Boş Çeyrek), dünyanın en büyük kesintisiz kum çölüdür.|The Rub’ al Khali (Empty Quarter) is the largest continuous sand desert on Earth.|Die Rub al-Chali (Leeres Viertel) ist die größte zusammenhängende Sandwüste der Erde.|El Rub al-Jali (Cuarto Vacío) es el mayor desierto de arena continuo del mundo.|Le Rub al-Khali (Quart Vide) est le plus grand désert de sable continu du monde.',
+ ae:'Burj Halife 2010’da açıldı; 828 m ile dünyanın en yüksek binasıdır.|The Burj Khalifa opened in 2010; at 828 m it is the world’s tallest building.|Der Burj Khalifa wurde 2010 eröffnet und ist mit 828 m das höchste Gebäude der Welt.|El Burj Khalifa se inauguró en 2010; con 828 m es el edificio más alto del mundo.|La Burj Khalifa a ouvert en 2010 ; avec 828 m, c’est le plus haut bâtiment du monde.',
+ ir:'Persepolis, MÖ 518’de Pers kralı I. Darius tarafından kuruldu.|Persepolis was founded by the Persian king Darius I in 518 BC.|Persepolis wurde 518 v. Chr. vom Perserkönig Dareios I. gegründet.|Persépolis fue fundada por el rey persa Darío I en el 518 a. C.|Persépolis a été fondée par le roi perse Darius Ier en 518 av. J.-C.',
+ pk:'K2, 8.611 m ile dünyanın ikinci yüksek dağıdır; zirvesine ilk kez 1954’te çıkıldı.|K2, at 8,611 m, is the world’s second-highest mountain; it was first climbed in 1954.|Der K2 ist mit 8611 m der zweithöchste Berg der Welt; er wurde 1954 erstmals bestiegen.|El K2, con 8611 m, es la segunda montaña más alta del mundo; se escaló por primera vez en 1954.|Le K2, 8611 m, est la deuxième plus haute montagne du monde ; il a été gravi pour la première fois en 1954.',
+ vn:'Kuzey Vietnam’daki Sa Pa pirinç terasları yüzyıllardır dağ yamaçlarına elle oyulmaktadır.|The Sa Pa rice terraces of northern Vietnam have been carved into the hillsides by hand for centuries.|Die Reisterrassen von Sa Pa in Nordvietnam werden seit Jahrhunderten von Hand in die Hänge gebaut.|Las terrazas de arroz de Sa Pa, al norte de Vietnam, se tallan a mano en las laderas desde hace siglos.|Les rizières en terrasses de Sa Pa, au nord du Vietnam, sont taillées à la main dans les pentes depuis des siècles.',
+ ph:'Filipinler 7.600’den fazla adadan oluşur.|The Philippines is made up of more than 7,600 islands.|Die Philippinen bestehen aus über 7600 Inseln.|Filipinas está formada por más de 7600 islas.|Les Philippines comptent plus de 7600 îles.',
+ np:'Everest 8.849 m ile dünyanın en yüksek dağıdır; 1953’te Hillary ve Tenzing tarafından ilk kez tırmanıldı.|Everest, at 8,849 m, is the world’s highest mountain; Hillary and Tenzing first climbed it in 1953.|Der Everest ist mit 8849 m der höchste Berg der Welt; Hillary und Tenzing bestiegen ihn 1953 als Erste.|El Everest, con 8849 m, es la montaña más alta del mundo; Hillary y Tenzing lo escalaron por primera vez en 1953.|L’Everest, 8849 m, est la plus haute montagne du monde ; Hillary et Tenzing l’ont gravi les premiers en 1953.',
+ my:'Petronas Kuleleri 1998’de tamamlandı ve 2004’e kadar dünyanın en yüksek binasıydı.|The Petronas Towers were completed in 1998 and were the world’s tallest buildings until 2004.|Die Petronas Towers wurden 1998 fertig und waren bis 2004 die höchsten Gebäude der Welt.|Las Torres Petronas se terminaron en 1998 y fueron los edificios más altos del mundo hasta 2004.|Les tours Petronas, achevées en 1998, ont été les plus hauts bâtiments du monde jusqu’en 2004.',
+ eg:'Büyük Giza Piramidi yaklaşık MÖ 2560’ta yapıldı; Antik Dünya’nın Yedi Harikası’ndan ayakta kalan tek eserdir.|The Great Pyramid of Giza was built around 2560 BC; it is the only Wonder of the Ancient World still standing.|Die Cheops-Pyramide entstand um 2560 v. Chr.; sie ist das einzige erhaltene der Sieben Weltwunder der Antike.|La Gran Pirámide de Guiza se construyó hacia el 2560 a. C.; es la única maravilla del mundo antiguo que sigue en pie.|La grande pyramide de Gizeh date d’environ 2560 av. J.-C. ; c’est la seule des Sept Merveilles du monde antique encore debout.',
+ ke:'Masai Mara’da her yıl milyonlarca antilop ve zebra büyük göçe çıkar.|Every year, millions of wildebeest and zebras cross the Maasai Mara in the Great Migration.|Jedes Jahr ziehen Millionen Gnus und Zebras bei der Großen Migration durch die Masai Mara.|Cada año, millones de ñus y cebras cruzan la Masái Mara en la Gran Migración.|Chaque année, des millions de gnous et de zèbres traversent le Masai Mara lors de la Grande Migration.',
+ za:'Cape Town’daki Masa Dağı’nın düz tepesi yaklaşık 3 km uzunluğundadır; 1929’dan beri teleferikle çıkılır.|Table Mountain in Cape Town has a flat top about 3 km long; a cable car has gone up since 1929.|Der Tafelberg in Kapstadt hat ein etwa 3 km langes flaches Plateau; seit 1929 fährt eine Seilbahn hinauf.|La Montaña de la Mesa, en Ciudad del Cabo, tiene una cima plana de unos 3 km; hay teleférico desde 1929.|La montagne de la Table, au Cap, a un sommet plat d’environ 3 km ; un téléphérique y monte depuis 1929.',
+ ma:'Marakeş 1070’te kuruldu; Cemaa’l-Fna meydanı ve çarşıları o zamandan beri ticaretin kalbidir.|Marrakesh was founded in 1070; its Jemaa el-Fnaa square and souks have been a trading hub ever since.|Marrakesch wurde 1070 gegründet; der Platz Djemaa el Fna und die Souks sind seither ein Handelszentrum.|Marrakech se fundó en 1070; la plaza Yamaa el Fna y sus zocos son desde entonces un centro comercial.|Marrakech a été fondée en 1070 ; la place Jemaa el-Fna et ses souks sont depuis un haut lieu du commerce.',
+ ng:'Nijerya Afrika’nın en kalabalık ülkesidir; güneyinde yağmur ormanları uzanır.|Nigeria is Africa’s most populous country; rainforests stretch across its south.|Nigeria ist das bevölkerungsreichste Land Afrikas; im Süden erstreckt sich Regenwald.|Nigeria es el país más poblado de África; en el sur se extienden selvas tropicales.|Le Nigeria est le pays le plus peuplé d’Afrique ; des forêts tropicales couvrent son sud.',
+ tz:'Kilimanjaro 5.895 m ile Afrika’nın en yüksek dağıdır; zirvesine ilk kez 1889’da çıkıldı.|Kilimanjaro, at 5,895 m, is Africa’s highest mountain; it was first climbed in 1889.|Der Kilimandscharo ist mit 5895 m Afrikas höchster Berg; er wurde 1889 erstmals bestiegen.|El Kilimanjaro, con 5895 m, es la montaña más alta de África; se escaló por primera vez en 1889.|Le Kilimandjaro, 5895 m, est le plus haut sommet d’Afrique ; il a été gravi pour la première fois en 1889.',
+ et:'Lalibela’daki 11 kilise 12.–13. yüzyılda tek parça kayanın içine oyularak yapıldı.|The 11 churches of Lalibela were carved out of solid rock in the 12th–13th centuries.|Die 11 Kirchen von Lalibela wurden im 12.–13. Jahrhundert aus massivem Fels gehauen.|Las 11 iglesias de Lalibela se tallaron en roca maciza en los siglos XII y XIII.|Les 11 églises de Lalibela ont été taillées dans la roche aux XIIe–XIIIe siècles.',
+ mg:'Madagaskar’daki Baobab Yolu’nun dev ağaçlarından bazıları 800 yaşına kadar ulaşır.|Some of the giant trees on Madagascar’s Avenue of the Baobabs are up to 800 years old.|Manche der Riesenbäume an Madagaskars Baobab-Allee sind bis zu 800 Jahre alt.|Algunos de los árboles gigantes de la Avenida de los Baobabs de Madagascar tienen hasta 800 años.|Certains arbres géants de l’allée des Baobabs, à Madagascar, ont jusqu’à 800 ans.',
+ sn:'Senegal’deki Retba Gölü içindeki bir alg yüzünden pembe görünür; suyu neredeyse Lut Gölü kadar tuzludur.|Senegal’s Lake Retba looks pink because of an alga; its water is almost as salty as the Dead Sea.|Der Retba-See im Senegal wirkt wegen einer Alge rosa; sein Wasser ist fast so salzig wie das Tote Meer.|El lago Retba de Senegal se ve rosa por un alga; su agua es casi tan salada como el mar Muerto.|Le lac Retba, au Sénégal, est rose à cause d’une algue ; son eau est presque aussi salée que la mer Morte.',
+ dz:'Sahra yaklaşık 9 milyon km² ile dünyanın en büyük sıcak çölüdür ve Cezayir’in %80’inden fazlasını kaplar.|The Sahara, about 9 million km², is the largest hot desert and covers over 80% of Algeria.|Die Sahara ist mit etwa 9 Mio. km² die größte heiße Wüste und bedeckt über 80 % Algeriens.|El Sáhara, de unos 9 millones de km², es el mayor desierto cálido y cubre más del 80 % de Argelia.|Le Sahara, environ 9 millions de km², est le plus grand désert chaud et couvre plus de 80 % de l’Algérie.',
+ us:'Özgürlük Heykeli 1886’da Fransa’nın hediyesi olarak dikildi; Golden Gate Köprüsü 1937’de açıldı.|The Statue of Liberty, a gift from France, was unveiled in 1886; the Golden Gate Bridge opened in 1937.|Die Freiheitsstatue, ein Geschenk Frankreichs, wurde 1886 enthüllt; die Golden Gate Bridge 1937 eröffnet.|La Estatua de la Libertad, regalo de Francia, se inauguró en 1886; el Golden Gate se abrió en 1937.|La statue de la Liberté, offerte par la France, a été inaugurée en 1886 ; le Golden Gate a ouvert en 1937.',
+ ca:'Niagara, ABD–Kanada sınırındaki üç şelaleden oluşur; 1901’de bir öğretmen fıçının içinde şelaleden ilk kez sağ çıktı.|Niagara is made of three falls on the US–Canada border; in 1901 a teacher first survived going over in a barrel.|Der Niagara besteht aus drei Fällen an der Grenze USA–Kanada; 1901 überlebte eine Lehrerin als Erste den Sturz in einem Fass.|El Niágara son tres cataratas en la frontera EE. UU.–Canadá; en 1901 una maestra sobrevivió por primera vez a la caída en un barril.|Le Niagara compte trois chutes à la frontière États-Unis–Canada ; en 1901, une institutrice a survécu la première à la chute dans un tonneau.',
+ mx:'Chichén Itzá’daki El Castillo piramidinin 365 basamağı vardır; ekinokslarda gölgesi yılan gibi görünür.|El Castillo at Chichén Itzá has 365 steps; at the equinoxes its shadow looks like a serpent.|El Castillo in Chichén Itzá hat 365 Stufen; zur Tagundnachtgleiche wirft er einen Schlangenschatten.|El Castillo de Chichén Itzá tiene 365 escalones; en los equinoccios su sombra parece una serpiente.|El Castillo, à Chichén Itzá, compte 365 marches ; aux équinoxes, son ombre dessine un serpent.',
+ cu:'Havana 1519’da kuruldu; renkli evleri ve 1950’lerden kalma eski arabalarıyla ünlüdür.|Havana was founded in 1519 and is famous for its colourful houses and 1950s cars.|Havanna wurde 1519 gegründet und ist berühmt für bunte Häuser und Autos aus den 1950ern.|La Habana se fundó en 1519 y es famosa por sus casas de colores y sus coches de los años 50.|La Havane, fondée en 1519, est célèbre pour ses maisons colorées et ses voitures des années 1950.',
+ jm:'Reggae müziği 1960’ların sonunda Jamaika’da doğdu.|Reggae music was born in Jamaica in the late 1960s.|Reggae entstand Ende der 1960er-Jahre in Jamaika.|El reggae nació en Jamaica a finales de los años 60.|Le reggae est né en Jamaïque à la fin des années 1960.',
+ pa:'Panama Kanalı 1914’te açıldı; Atlas Okyanusu ile Büyük Okyanus’u birbirine bağlar.|The Panama Canal opened in 1914 and links the Atlantic and Pacific Oceans.|Der Panamakanal wurde 1914 eröffnet und verbindet Atlantik und Pazifik.|El Canal de Panamá se abrió en 1914 y une los océanos Atlántico y Pacífico.|Le canal de Panama a ouvert en 1914 et relie l’Atlantique au Pacifique.',
+ cr:'Kosta Rika küçük bir ülke olmasına rağmen dünyadaki canlı türlerinin yaklaşık %5’ine ev sahipliği yapar.|Though small, Costa Rica is home to about 5% of all species on Earth.|Obwohl klein, beherbergt Costa Rica etwa 5 % aller Arten der Erde.|Aunque pequeña, Costa Rica alberga cerca del 5 % de las especies del planeta.|Bien que petit, le Costa Rica abrite environ 5 % des espèces de la planète.',
+ gt:'Tikal, Maya’nın en büyük şehirlerinden biriydi; en parlak dönemi MS 200–850 yılları arasıydı.|Tikal was one of the largest Maya cities; it flourished from about AD 200 to 850.|Tikal war eine der größten Maya-Städte; ihre Blütezeit lag etwa 200–850 n. Chr.|Tikal fue una de las mayores ciudades mayas; vivió su esplendor hacia el 200–850 d. C.|Tikal fut l’une des plus grandes cités mayas ; son apogée se situe vers 200–850 apr. J.-C.',
+ br:'Rio’daki Kurtarıcı İsa heykeli 1931’de tamamlandı ve 30 m yüksekliğindedir.|Rio’s Christ the Redeemer statue was completed in 1931 and is 30 m tall.|Die Christusstatue in Rio wurde 1931 fertiggestellt und ist 30 m hoch.|El Cristo Redentor de Río se terminó en 1931 y mide 30 m.|Le Christ Rédempteur de Rio, achevé en 1931, mesure 30 m.',
+ ar:'Patagonya’daki Perito Moreno Buzulu’nun ön duvarı yaklaşık 70 m yüksekliğindedir; buz parçaları gürültüyle göle düşer.|The front wall of Patagonia’s Perito Moreno Glacier is about 70 m high; chunks of ice crash into the lake.|Die Gletscherfront des Perito Moreno in Patagonien ist etwa 70 m hoch; Eisbrocken stürzen krachend in den See.|El frente del glaciar Perito Moreno, en la Patagonia, mide unos 70 m; sus bloques de hielo caen con estruendo al lago.|Le front du glacier Perito Moreno, en Patagonie, fait environ 70 m ; des blocs de glace s’écrasent dans le lac.',
+ pe:'Machu Picchu 15. yüzyılda İnkalar tarafından yapıldı ve 1911’de dünyaya tanıtıldı.|Machu Picchu was built by the Incas in the 15th century and became world-famous in 1911.|Machu Picchu wurde im 15. Jahrhundert von den Inka erbaut und 1911 weltbekannt.|Machu Picchu lo construyeron los incas en el siglo XV y se dio a conocer al mundo en 1911.|Le Machu Picchu a été bâti par les Incas au XVe siècle et révélé au monde en 1911.',
+ cl:'Paskalya Adası’nda 900’den fazla moai heykeli vardır; çoğu 1250–1500 yılları arasında yontuldu.|Easter Island has over 900 moai statues; most were carved between 1250 and 1500.|Auf der Osterinsel stehen über 900 Moai; die meisten wurden zwischen 1250 und 1500 gehauen.|La Isla de Pascua tiene más de 900 moáis; la mayoría se tallaron entre 1250 y 1500.|L’île de Pâques compte plus de 900 moaï ; la plupart ont été sculptés entre 1250 et 1500.',
+ co:'Kolombiya dünyanın en büyük kahve üreticilerinden biridir; Kahve Bölgesi 2011’de UNESCO listesine girdi.|Colombia is one of the world’s top coffee producers; its Coffee Region joined the UNESCO list in 2011.|Kolumbien ist einer der größten Kaffeeproduzenten; die Kaffeeregion ist seit 2011 UNESCO-Welterbe.|Colombia es uno de los mayores productores de café; el Eje Cafetero es Patrimonio de la UNESCO desde 2011.|La Colombie est l’un des premiers producteurs de café ; sa région caféière est classée à l’UNESCO depuis 2011.',
+ ve:'Angel Şelalesi 979 m ile dünyanın en yüksek şelalesidir.|Angel Falls, at 979 m, is the world’s highest waterfall.|Der Salto Ángel ist mit 979 m der höchste Wasserfall der Welt.|El Salto Ángel, con 979 m, es la cascada más alta del mundo.|Le Salto Ángel, 979 m, est la plus haute chute d’eau du monde.',
+ bo:'Uyuni Tuz Gölü 10.582 km² ile dünyanın en büyük tuz düzlüğüdür; yağmurdan sonra dev bir aynaya döner.|The Uyuni salt flat, 10,582 km², is the largest on Earth; after rain it becomes a giant mirror.|Der Salar de Uyuni ist mit 10.582 km² die größte Salzpfanne der Erde; nach Regen wird er zum Riesenspiegel.|El Salar de Uyuni, de 10.582 km², es el mayor del mundo; tras la lluvia se convierte en un espejo gigante.|Le salar d’Uyuni, 10 582 km², est le plus grand du monde ; après la pluie, il devient un miroir géant.',
+ au:'Sidney Opera Binası 1973’te açıldı; yelkene benzeyen çatısıyla ünlüdür.|The Sydney Opera House opened in 1973 and is famous for its sail-like roof.|Das Opernhaus von Sydney wurde 1973 eröffnet und ist für sein segelartiges Dach berühmt.|La Ópera de Sídney se inauguró en 1973 y es famosa por su techo en forma de velas.|L’Opéra de Sydney, inauguré en 1973, est célèbre pour son toit en forme de voiles.',
+ nz:'Yüzüklerin Efendisi filmlerindeki Hobbiton köyü Matamata’da çekildi; ilk film 2001’de gösterime girdi.|Hobbiton from The Lord of the Rings was filmed in Matamata; the first film came out in 2001.|Hobbingen aus „Der Herr der Ringe“ wurde in Matamata gedreht; der erste Film kam 2001 heraus.|La Comarca de El Señor de los Anillos se rodó en Matamata; la primera película se estrenó en 2001.|Hobbitebourg du Seigneur des Anneaux a été tourné à Matamata ; le premier film est sorti en 2001.',
+ fj:'Fiji 330’dan fazla adadan oluşur; renkli mercan resifleriyle ünlüdür.|Fiji is made up of more than 330 islands and is famous for its colourful coral reefs.|Fidschi besteht aus über 330 Inseln und ist für seine bunten Korallenriffe bekannt.|Fiyi está formada por más de 330 islas y es famosa por sus arrecifes de coral.|Les Fidji comptent plus de 330 îles et sont célèbres pour leurs récifs coralliens.',
+ pg:'Papua Yeni Gine’de 800’den fazla dil konuşulur; bu dünyadaki en yüksek sayıdır.|More than 800 languages are spoken in Papua New Guinea, the most of any country.|In Papua-Neuguinea werden über 800 Sprachen gesprochen – mehr als in jedem anderen Land.|En Papúa Nueva Guinea se hablan más de 800 lenguas, más que en ningún otro país.|Plus de 800 langues sont parlées en Papouasie-Nouvelle-Guinée, un record mondial.',
+ is:'Dünyadaki tüm “gayzer” kelimeleri İzlanda’daki Geysir kaynağının adından gelir.|The word “geyser” in every language comes from Geysir, a hot spring in Iceland.|Das Wort „Geysir“ stammt von der gleichnamigen heißen Quelle in Island.|La palabra «géiser» viene de Geysir, una fuente termal de Islandia.|Le mot « geyser » vient de Geysir, une source chaude d’Islande.',
+ gl:'Grönland dünyanın en büyük adasıdır; yüzeyinin yaklaşık %80’i buzla kaplıdır.|Greenland is the world’s largest island; about 80% of it is covered in ice.|Grönland ist die größte Insel der Welt; etwa 80 % sind von Eis bedeckt.|Groenlandia es la isla más grande del mundo; cerca del 80 % está cubierta de hielo.|Le Groenland est la plus grande île du monde ; environ 80 % de sa surface est couverte de glace.',
+ aq:'Antarktika’da 1983’te −89,2 °C ile Dünya’da ölçülen en düşük hava sıcaklığı kaydedildi.|In 1983, Antarctica recorded −89.2 °C, the lowest air temperature ever measured on Earth.|1983 wurden in der Antarktis −89,2 °C gemessen – die tiefste je gemessene Lufttemperatur.|En 1983 la Antártida registró −89,2 °C, la temperatura más baja jamás medida en la Tierra.|En 1983, l’Antarctique a enregistré −89,2 °C, la plus basse température jamais mesurée sur Terre.'
+};
 const HZ={
  traffic:'Trafik|Traffic|Verkehr|Tráfico|Circulation',roadspikes:'Yol dikenleri|Roadwork spikes|Baustellen-Stacheln|Pinchos de obras|Pointes de chantier',strait:'Boğaz suyu|Bosphorus water|Bosporus-Wasser|Aguas del Bósforo|Eaux du Bosphore',
  climb:'Tırmanış|Climbing|Klettern|Escalada|Escalade',girders:'Çelik kirişler|Steel girders|Stahlträger|Vigas de acero|Poutres d’acier',bugs:'Böcekler|Beetles|Käfer|Escarabajos|Scarabées',
  tilt:'Eğik zemin|Tilted ground|Schiefer Boden|Suelo inclinado|Sol penché',spikes:'Dikenler|Spikes|Stacheln|Pinchos|Pointes',gears:'Dönen saat çarkları|Turning clock gears|Drehende Zahnräder|Engranajes giratorios|Engrenages tournants',
  rain:'Yağmur, kaygan zemin|Rain, slippery ground|Regen, glatter Boden|Lluvia, suelo resbaladizo|Pluie, sol glissant',autobahn:'Hızlı trafik|Fast traffic|Schneller Verkehr|Tráfico rápido|Circulation rapide',
- gaps:'Boşluklar|Gaps|Lücken|Huecos|Trous',bulls:'Hücum eden boğalar|Charging bulls|Angreifende Stiere|Toros que embisten|Taureaux qui chargent',cliffs:'Uçurumlar|Cliffs|Klippen|Acantilados|Falaises',
+ gaps:'Boşluklar|Gaps|Lücken|Huecos|Trous',bulls:'Hücum eden boğalar|Charging bulls|Angreifende Stiere|Toros que embisten|Taureaux qui chargent',gondolas:'Venedik gondolları|Venice gondolas|Gondeln in Venedig|Góndolas de Venecia|Gondoles de Venise',cliffs:'Uçurumlar|Cliffs|Klippen|Acantilados|Falaises',
  sails:'Dönen kanatlara bin|Ride the turning sails|Fahr auf den Flügeln|Sube a las aspas|Monte sur les ailes',canals:'Kanallar|Canals|Kanäle|Canales|Canaux',
  avalanche:'Çığ|Avalanche|Lawine|Avalancha|Avalanche',icyslopes:'Buzlu yamaçlar|Icy slopes|Vereiste Hänge|Laderas heladas|Pentes verglacées',
  viking:'Viking gemileri|Viking ships|Wikingerschiffe|Barcos vikingos|Drakkars',fjord:'Fiyort suyu|Fjord water|Fjordwasser|Agua del fiordo|Eau du fjord',ice:'Kaygan buz|Slippery ice|Glattes Eis|Hielo resbaladizo|Glace glissante',
@@ -523,10 +591,10 @@ const COUNTRIES=[
 const LV={
  tr:{h:'traffic roadspikes strait'},
  fr:{p:'tower tower flat spikes enemy movplat',h:'climb girders bugs',pl:'girder'},
- it:{p:'tilt tilt hill spikes enemy flat',h:'tilt spikes bugs'},
+ it:{p:'tilt tilt hill spikes enemy flat',h:'tilt gondolas bugs',extra:3,fix:{4:'gondolas',8:'gondolas'}},
  gb:{p:'wheel wheel flat spikes enemy stepUp',h:'gears rain bugs',wh:'gear',w:'rain',ice:0.45},
  de:{p:'fastcars fastcars flat hill spikes gap',h:'autobahn spikes gaps'},
- es:{p:'enemy enemy flat spikes hill gap',h:'bulls spikes cliffs',e:'bull'},
+ es:{p:'enemy enemy flat spikes hill gap stepUp',h:'bulls spikes cliffs',e:'bull',extra:5,fix:{2:'stampede',7:'stampede',11:'stampede'}},
  nl:{p:'wheel wheel flat gap movplat enemy',h:'sails canals bugs',wh:'sail'},
  gr:{h:'stones ships sling'},
  ch:{chase:'avalanche',h:'avalanche icyslopes gaps',ice:0.2},
@@ -752,7 +820,7 @@ function mkPlat(x0,y,ax,period,phase,o){
   return p;
 }
 function mkCroc(x,baseY,phase){return{kind:'croc',x,baseY,y:baseY-12,w:120,h:22,period:4.6,phase,vy:0,jaw:0.1,snapped:false}}
-const SHIPSZ={viking:[210,22],boat:[170,20],surf:[150,12],ice:[190,34]};
+const SHIPSZ={viking:[210,22],boat:[170,20],surf:[150,12],ice:[190,34],gondola:[150,14]};
 function mkShip(x0,y0,ax,phase,skin){const[w,h]=SHIPSZ[skin]||[200,22];return{kind:'ship',skin:skin||'',x0,y0,x:x0,y:y0,w,h,ax,phase,vx:0,vy:0}}
 function mkSling(x,y){return{kind:'sling',x,y}}
 function mkFaller(x,gy,period,phase,skin){const ic=skin==='icicle';return{kind:'faller',skin:skin||'stone',x,gy,top:gy-620,y:gy-620,w:ic?18:28,h:ic?40:28,period,phase,danger:false,warn:0}}
@@ -809,6 +877,15 @@ const CHUNKS={
   cable(B,L,r){B.to(80);const gx=B.x;B.gap(600);const sk=L.cfg.cb||'cabin',w=sk==='zip'?80:110,H=sk==='zip'?90:110,x0=gx+10,x1=gx+600-w-10,y0=B.y,y1=B.y;
     L.bodies.push(mkPlat(x0,y0,0,4.6-0.8*L.diff,r()*6,{mode:'line',x1,y1,w,h:sk==='zip'?10:16,skin:sk,hang:H}));
     L.cables.push({ax:gx-60,ay:y0-H,bx:gx+660,by:y1-H});B.to(140)},
+  // boğa koşusu: boğalar sağdaki ahır kapısından çıkıp oyuncuya doğru koşar, soldaki kapıya girer; üstlerinden atlanır
+  stampede(B,L,r){B.to(170);const xa=B.x;B.to(1100);const xb=B.x,cyc=xb-xa+190+320,v=(300+r()*40)*(1+0.4*L.diff);
+    L.lanes.push({xa,xb,y:B.y,style:'corral'});
+    for(let i=0;i<3;i++)L.bodies.push({kind:'runner',skin:'bull',charge:true,dead:false,w:72,h:46,xa,xb,y:B.y-46,x:xa+cyc*(i+0.4)/3,vx:-v,cyc});
+    B.to(190)},
+  // Venedik kanalı: sallanan gondoldan gondola atla
+  gondolas(B,L,r){B.to(80);const gx=B.x,deck=Math.min(B.y+26,598),len=4*230+90;B.gap(len);
+    for(let i=0;i<4;i++)L.bodies.push(mkShip(gx+60+i*230,deck,26+r()*22,r()*6,'gondola'));
+    L.waters.push({x1:gx,x2:gx+len,y:deck+30});(L.venice=L.venice||[]).push({x1:gx-40,x2:gx+len+40,y:deck+30});B.to(140)},
   pillars(B,L,r){B.to(80);for(let k=0;k<3;k++){B.gap(110+r()*40+L.diff*20);B.to(70)}B.gap(130);B.to(140)}
 };
 
@@ -817,12 +894,12 @@ function levelGen(c){
   L.seaLevel=!!(th.sea||cfg.sea);
   const pool=chase?CHASE_POOL:cfg.p.split(' ');
   const B=new Builder(-600,cfg.high?340:520);B.to(1120);L.start={x:140,y:B.y-R-1};
-  const n=8+Math.round(L.diff*6),third=Math.floor(n/3);
+  const n=8+Math.round(L.diff*6)+(cfg.extra||0),third=Math.floor(n/3);
   const starAt=new Set([1+Math.floor(r()*third),third+1+Math.floor(r()*third),Math.min(n-1,2*third+1+Math.floor(r()*third))]);
   for(let i=0;i<n;i++){
     if(i===Math.floor(n/2)){B.surf({});B.to(160);L.checks.push({x:B.x-80,y:B.y})}
     const ic=cfg.iceRamp?i/n:(cfg.ice||0);if(ic)B.setIce(r()<ic);else B.surf({});
-    const name=pool[Math.floor(r()*pool.length)];
+    const pickd=pool[Math.floor(r()*pool.length)],name=(cfg.fix&&cfg.fix[i])||pickd;
     const x0=B.x,y0=B.y;
     CHUNKS[name](B,L,r);
     if(starAt.has(i))L.stars.push({x:(x0+B.x)/2,y:Math.min(y0,B.y)-150});
@@ -896,7 +973,7 @@ function buildLevel(c){
   }
   for(const x of[0,L.width])L.segs.push({ax:x,ay:-3000,bx:x,by:3000,minx:x,maxx:x,miny:-3000,maxy:3000,wall:true});
   // hareketli nesneleri t=0 konumuna yerleştir (yürüyen/akan nesneler zaten yerinde)
-  for(const o of L.bodies){if(o.kind==='bug'||o.kind==='car'||o.kind==='boss')continue;updateBody(o,0,1,null);o.vx=0;o.vy=0}
+  for(const o of L.bodies){if(o.kind==='bug'||o.kind==='car'||o.kind==='runner'||o.kind==='boss')continue;updateBody(o,0,1,null);o.vx=0;o.vy=0}
   return L;
 }
 function groundYAt(L,x){let best=null;for(const s of L.segs){if(s.wall||s.ax===s.bx||x<s.minx||x>s.maxx)continue;const y=s.ay+(x-s.ax)/(s.bx-s.ax)*(s.by-s.ay);if(best===null||y<best)best=y}return best}
@@ -925,9 +1002,16 @@ function startLevel(c,lives){
   else if(L.boss)msg=tx('introBoss')+' — '+ctl;
   else msg=placeName(c)+': '+hazText(c)+' — '+ctl;
   showToast(msg,5000);
+  showFact(c);
   musicStart(c);
 }
-function backToMap(){mode='map';game=null;quiz=null;clearTimeout(bannerT);$('banner').hidden=true;musicStop();$('hud').hidden=true;$('touch').hidden=true;$('done').hidden=true;$('quiz').hidden=true;$('mapbar').hidden=false;$('credit').hidden=false;$('toast').hidden=true;updateTotal();if(map.sel)selectCountry(map.sel);else $('mapHint').hidden=false}
+// ülkenin ünlü yeri hakkında kısa bilgi: giriş mesajı kapanınca üstte belirir, bir süre kalır
+let factT=0;
+function hideFact(){clearTimeout(factT);$('fact').hidden=true}
+function showFact(c){hideFact();if(!FACT[c.id])return;
+  factT=setTimeout(()=>{if(!game||game.c!==c)return;const f=$('fact');$('factTxt').textContent=pick(FACT[c.id]);f.classList.remove('out');f.hidden=false;
+    factT=setTimeout(()=>{f.classList.add('out');factT=setTimeout(()=>{f.hidden=true},500)},11000)},5300)}
+function backToMap(){mode='map';game=null;quiz=null;clearTimeout(bannerT);hideFact();$('banner').hidden=true;musicStop();$('hud').hidden=true;$('touch').hidden=true;$('done').hidden=true;$('quiz').hidden=true;$('mapbar').hidden=false;$('credit').hidden=false;$('toast').hidden=true;updateTotal();if(map.sel)selectCountry(map.sel);else $('mapHint').hidden=false}
 function updateHud(){if(!game)return;const n=game.L.stars.filter(s=>s.got).length;$('hStars').innerHTML='<span class="gold">★</span> '+n+'/3';let h='';for(let i=0;i<3;i++)h+='<span class="heart'+(i<game.lives?'':' off')+'">♥</span>';
   const t=$('hTries');t.innerHTML=h;t.setAttribute('aria-label',tx('lives')+' '+game.lives+'/3')}
 
@@ -1030,6 +1114,9 @@ function collide(g){
         // sadece şeridin görünen kısmı (iki uç arasındaki) çarpışır
         const x1=Math.max(o.x,o.xa),x2=Math.min(o.x+o.w,o.xb);if(x2-x1<4)continue;const c=rectContact(b.x,b.y,x1,o.y,x2-x1,o.h);if(!c)continue;
         if(c.ny<-0.35){resolve(b,c,o.vx,0);setGround(c,o.vx,0,false)}else{die('hit');return}continue}
+      if(o.kind==='runner'){
+        const x1=Math.max(o.x,o.xa),x2=Math.min(o.x+o.w,o.xb);if(x2-x1<4)continue;const c=rectContact(b.x,b.y,x1,o.y,x2-x1,o.h);if(!c)continue;
+        if(c.ny<-0.35){b.y=o.y-R-0.5;b.vy=-(input.j?820:600);b.boost=true;SFX.stomp()}else{die('hit');return}continue}
       if(o.kind==='croc'){if(o.y<o.baseY-2&&rectContact(b.x,b.y,o.x+o.w-4,o.y-4,38,18,R-4)){die('hit');return}
         const c=rectContact(b.x,b.y,o.x,o.y,o.w,o.h);if(!c)continue;resolve(b,c,0,o.vy);setGround(c,0,o.vy,false);continue}
       if(SOLID[o.kind]||(o.kind==='crumble'&&o.st<2)||(o.kind==='gate'&&!o.gone)){const c=rectContact(b.x,b.y,o.x,o.y,o.w,o.h);if(!c)continue;resolve(b,c,o.vx||0,o.vy||0);setGround(c,o.vx||0,o.vy||0,o.skin==='ice');if(c.ny<-0.55)o.touched=true}
@@ -1095,6 +1182,7 @@ function updateBody(o,t,dt,g){
   }
   else if(k==='ship'){const nx=o.x0+o.ax*Math.sin(t*Math.PI*2/5.2+o.phase),ny=o.y0+9*Math.sin(t*Math.PI*2/2.6+o.phase*1.7);o.vx=(nx-o.x)/dt;o.vy=(ny-o.y)/dt;o.x=nx;o.y=ny}
   else if(k==='car'){o.x+=o.vx*dt;if(o.x+o.w<o.xa){o.x+=o.cyc;o.honked=false}}
+  else if(k==='runner'){o.x+=o.vx*dt;if(o.x+o.w<o.xa)o.x+=o.cyc}
   else if(k==='croc'){
     const p=((t+o.phase)%o.period+o.period)%o.period;let ny;
     if(p<2.4)ny=o.baseY-12;else if(p<3.0)ny=o.baseY-12+42*((p-2.4)/0.6);else if(p<3.8)ny=o.baseY+30;else ny=o.baseY+30-42*((p-3.8)/0.6);
@@ -1333,6 +1421,14 @@ function drawRoad(ln){ctx.fillStyle='#4a4f55';ctx.fillRect(ln.xa,ln.y,ln.xb-ln.x
 // Şerit uçları: araç bunların arkasından geçer, bu yüzden araç kesilmesi görünmez
 function drawLaneEnd(ln,side){
   const y=ln.y;
+  if(ln.style==='corral'){
+    // boğa ahırı: beyaz badanalı duvar, kırmızı ahşap kapı
+    const x=side<0?ln.xa-96:ln.xb;
+    ctx.fillStyle='#f3ead8';ctx.fillRect(x,y-140,96,140);ctx.fillStyle='#c8553a';ctx.fillRect(x-4,y-148,104,12);
+    ctx.fillStyle='#3a2418';ctx.beginPath();ctx.moveTo(x+14,y);ctx.lineTo(x+14,y-62);ctx.arc(x+48,y-62,34,Math.PI,0);ctx.lineTo(x+82,y);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#b8432a';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(side<0?x+82:x+14,y);ctx.lineTo(side<0?x+82:x+14,y-62);ctx.stroke();
+    return;
+  }
   if(ln.style==='toll'){
     const x=side<0?ln.xa-72:ln.xb;
     ctx.fillStyle='#8c949a';ctx.fillRect(x-14,y-170,100,14);ctx.fillRect(x-8,y-156,8,156);ctx.fillRect(x+72,y-156,8,156);
@@ -1487,8 +1583,26 @@ function drawWheel(wh){
     const rot=game?wh.plats[0].a0+game.t*wh.plats[0].om:0;ctx.fillStyle='#a8862e';for(let k=0;k<24;k++){const a=k*Math.PI/12+rot;ctx.save();ctx.translate(cx+Math.cos(a)*(r-10),cy+Math.sin(a)*(r-10));ctx.rotate(a);ctx.fillRect(-4,-5,8,10);ctx.restore()}}
   ctx.fillStyle='#4a4f55';ctx.beginPath();ctx.arc(cx,cy,14,0,7);ctx.fill();
 }
+// Venedik kanalı arkasında renkli cepheler ve çizgili bağlama direkleri
+const VEN_COL=['#e0a96d','#d9765a','#e8d3a8','#c9845e','#f0c27a','#b9a089'];
+function drawVenice(v){
+  let i=0;for(let x=v.x1;x<v.x2;x+=110,i++){const hh=170+((i*37)%60),c=VEN_COL[i%VEN_COL.length];
+    ctx.fillStyle=c;ctx.fillRect(x,v.y-hh,110,hh+20);ctx.fillStyle=shade(c,-0.18);ctx.fillRect(x,v.y-hh,110,8);
+    ctx.fillStyle='#4a3a32';for(let r=0;r<2;r++)for(let k=0;k<3;k++){const wx=x+16+k*30,wy=v.y-hh+28+r*58;ctx.beginPath();ctx.moveTo(wx,wy+30);ctx.lineTo(wx,wy+9);ctx.arc(wx+9,wy+9,9,Math.PI,0);ctx.lineTo(wx+18,wy+30);ctx.closePath();ctx.fill()}}
+  for(let x=v.x1+70;x<v.x2-40;x+=230){ctx.fillStyle='#f4f1ea';ctx.fillRect(x,v.y-90,8,110);ctx.fillStyle='#2a62b8';for(let k=0;k<4;k++)ctx.fillRect(x,v.y-90+k*24,8,10)}
+}
 function drawShip(o){
   const{x,y,w,h}=o,sk=o.skin;
+  if(sk==='gondola'){
+    // siyah uzun gövde, kıçta kıvrık uç, başta demir süs; arkada kürekçi
+    ctx.fillStyle='#1d1f24';ctx.beginPath();ctx.moveTo(x-18,y-22);ctx.quadraticCurveTo(x-6,y+h+4,x+30,y+h+6);ctx.lineTo(x+w-30,y+h+6);ctx.quadraticCurveTo(x+w+8,y+h+2,x+w+20,y-30);ctx.lineTo(x+w+12,y-30);ctx.quadraticCurveTo(x+w-4,y,x+w-30,y);ctx.lineTo(x+20,y);ctx.quadraticCurveTo(x-4,y,x-10,y-22);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#c9ccd1';ctx.fillRect(x+w+12,y-40,9,4);ctx.fillRect(x+w+12,y-34,9,3);ctx.fillRect(x+w+12,y-28,9,3);
+    ctx.fillStyle='#b8432a';ctx.fillRect(x+w*0.45,y-8,34,8);
+    ctx.fillStyle='#f4ecd8';ctx.fillRect(x+12,y-36,12,20);ctx.fillStyle='#1d1f24';for(let k=0;k<3;k++)ctx.fillRect(x+12,y-33+k*6,12,3);
+    ctx.fillStyle='#e9c49a';ctx.beginPath();ctx.arc(x+18,y-42,6,0,7);ctx.fill();ctx.fillStyle='#f4c430';ctx.fillRect(x+10,y-50,16,4);ctx.fillStyle='#b8432a';ctx.fillRect(x+12,y-48,12,2);
+    ctx.strokeStyle='#6b4423';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+26,y-34);ctx.lineTo(x-14,y+30);ctx.stroke();
+    return;
+  }
   if(sk==='surf'){ctx.fillStyle='#f4c430';ctx.beginPath();ctx.ellipse(x+w/2,y+h/2,w/2,h/2+2,0,0,7);ctx.fill();ctx.fillStyle='#d8432f';ctx.fillRect(x+w/2-4,y,8,h);ctx.strokeStyle='rgba(255,255,255,0.8)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-10,y+h+6);ctx.quadraticCurveTo(x+w/2,y+h-2,x+w+10,y+h+6);ctx.stroke();return}
   if(sk==='ice'){ctx.fillStyle='#eef8fc';ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y);ctx.lineTo(x+w-6,y+h);ctx.lineTo(x+w-30,y+h+60);ctx.lineTo(x+20,y+h+70);ctx.lineTo(x+6,y+h);ctx.closePath();ctx.fill();ctx.fillStyle='#bfe3f2';ctx.beginPath();ctx.moveTo(x+w*0.55,y);ctx.lineTo(x+w,y);ctx.lineTo(x+w-6,y+h);ctx.lineTo(x+w-30,y+h+60);ctx.lineTo(x+w*0.6,y+h+66);ctx.closePath();ctx.fill();return}
   const m=x+w*0.42;
@@ -1737,6 +1851,7 @@ function drawPlay(){
   if(!L.noScatter){setLayer(0.6);drawScatter(L)}
   setLayer(1);
   if(L.decorBack)L.decorBack(L,t);
+  if(L.venice)for(const v of L.venice)drawVenice(v);
   for(const wh of L.wheels)drawWheel(wh);
   for(const cb of L.cables){ctx.strokeStyle='#3d4247';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cb.ax,cb.ay);ctx.lineTo(cb.bx,cb.by);ctx.stroke();ctx.fillStyle='#5d6670';ctx.fillRect(cb.ax-6,cb.ay,12,400);ctx.fillRect(cb.bx-6,cb.by,12,400)}
   drawTerrain(L,t);
@@ -1745,7 +1860,7 @@ function drawPlay(){
   for(const ck of L.checks)drawCheck(ck,t);
   drawFinish(L,t);
   for(const o of L.bodies){const k=o.kind;
-    if(k==='car')drawCar(o);else if(k==='bug')drawBug(o,t,th);else if(k==='croc')drawCroc(o);else if(k==='plat')drawPlat(o,L);else if(k==='ship')drawShip(o);else if(k==='sling')drawSling(o,g);
+    if(k==='car')drawCar(o);else if(k==='bug')drawBug(o,t,th);else if(k==='runner'){ctx.save();ctx.beginPath();ctx.rect(o.xa,o.y-80,o.xb-o.xa,o.h+100);ctx.clip();drawBug(o,t,th);ctx.restore()}else if(k==='croc')drawCroc(o);else if(k==='plat')drawPlat(o,L);else if(k==='ship')drawShip(o);else if(k==='sling')drawSling(o,g);
     else if(k==='spring')drawSpring(o);else if(k==='geyser')drawGeyser(o,t);else if(k==='faller')drawFaller(o);else if(k==='leaper')drawLeaper(o);else if(k==='blade')drawBlade(o);
     else if(k==='crumble')drawCrumble(o,t);else if(k==='rock')drawRock(o,L);else if(k==='gate')drawGate(o);else if(k==='boss')drawBoss(o,t)}
   for(const ln of L.lanes){drawLaneEnd(ln,-1);drawLaneEnd(ln,1)}
@@ -1818,7 +1933,7 @@ function applyLang(){
   $('langSel').value=lang;
   document.querySelectorAll('#introLangs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===lang?'true':'false'));
   if(map.sel&&!$('card').hidden)selectCountry(map.sel);
-  if(game){setHudTitle(game.c);updateHud();if(!$('done').hidden)showDone()}
+  if(game){setHudTitle(game.c);updateHud();if(!$('done').hidden)showDone();if(!$('fact').hidden)$('factTxt').textContent=pick(FACT[game.c.id])}
   renderTouchBtns();
 }
 const ls=$('langSel');LANGS.forEach(l=>{const o=document.createElement('option');o.value=l;ls.appendChild(o)});
