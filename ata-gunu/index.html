@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}</style>
+<title>Ata'nın Günü</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700;800&display=swap">
+<style>
+/* Layout: ev planı tuvali ortada; üstte puan/vitamin/beyin, altında kum saatli görev şeritleri. Tek görünüm, açık tema. */
+:root{
+  --bg:#dce6ec; --panel:#f6f9fb; --ink:#1d2b36; --muted:#5a6a76; --line:#c3d1da;
+  --sand:#e39a2d; --good:#2e9a58; --bad:#d24646; --brain:#4a73c0;
+  --f-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Nunito","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px}
+.app{max-width:1600px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between}
+.top h1{font-family:var(--f-display);font-weight:800;font-size:1.7rem;margin:0;line-height:1}
+.top .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-weight:700;display:inline-flex;gap:6px;align-items:center}
+button{font-family:var(--f-body);font-weight:800;font-size:.95rem;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 14px;cursor:pointer}
+button:hover{border-color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--sand);outline-offset:2px}
+button.main{background:var(--ink);color:#fff;border-color:var(--ink)}
+.hud{display:grid;grid-template-columns:auto 1fr 1fr;gap:10px 18px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.score{font-family:var(--f-display);font-weight:800;font-size:2rem;line-height:1;color:var(--sand);font-variant-numeric:tabular-nums}
+.score small{display:block;font-family:var(--f-body);font-size:.7rem;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.bar{min-width:0}
+.bar .lab{display:flex;justify-content:space-between;font-weight:800;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.bar .lab b{color:var(--ink);font-variant-numeric:tabular-nums}
+.track{height:12px;background:#e3ebf0;border-radius:99px;overflow:hidden;margin-top:4px}
+.fill{height:100%;border-radius:99px;transition:width .4s ease-out}
+.state{font-size:.75rem;font-weight:800;color:var(--bad);min-height:1em}
+.tasks{display:flex;flex-wrap:wrap;gap:8px;min-height:40px}
+.chip{display:flex;align-items:center;gap:8px;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:4px 10px 4px 6px;font-weight:700;font-size:.88rem}
+.chip.low{border-color:var(--bad);color:var(--bad)}
+.chip.warn{border-color:var(--bad);background:#fbeaea}
+.chip .sec{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:800}
+.chip svg{width:18px;height:26px;flex:none}
+.banner{background:var(--ink);color:#fff;border-radius:12px;padding:9px 14px;font-weight:700;min-height:1.4em}
+.banner.trap{background:var(--bad)}
+.stage{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#33414d}
+canvas{display:block;width:100%;height:auto;aspect-ratio:1000/620;max-width:100%;touch-action:manipulation;cursor:pointer}
+.actbar{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:8px}
+.help{color:var(--muted);font-size:.85rem;margin:0}
+.modal{position:fixed;inset:0;background:rgba(20,30,40,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.card{background:var(--panel);border-radius:18px;max-width:560px;width:100%;max-height:calc(100% - 20px);overflow:auto;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.card h2{font-family:var(--f-display);font-weight:800;font-size:1.6rem;margin:0 0 6px;text-wrap:balance;line-height:1.1}
+.card p{margin:6px 0 12px;line-height:1.45}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:10px 0}
+.opts button{padding:12px;font-size:1rem;text-align:left}
+.opts button .k{display:block;font-size:.75rem;color:var(--muted);font-weight:700}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px}
+.log{list-style:none;padding:0;margin:8px 0;display:flex;flex-direction:column;gap:4px}
+.log li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:4px 0;font-size:.9rem}
+.log .d{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.rules{margin:8px 0;padding-left:18px;line-height:1.5}
+.fam{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.fam fieldset{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.fam legend{font-weight:800;padding:0 4px}
+.fam label{font-size:.8rem;font-weight:700;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.fam label.ck{flex-direction:row;align-items:center;gap:6px}
+.fam input[type=text],.fam select{font:inherit;color:var(--ink);padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;min-width:0}
+.fam input[type=color]{width:100%;height:30px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:2px}
+.sw{display:flex;gap:4px;flex-wrap:wrap}
+.sw button{width:24px;height:24px;border-radius:50%;padding:0}
+.sw button[aria-pressed=true]{outline:3px solid var(--ink);outline-offset:1px}
+#prev{width:100%;aspect-ratio:3/1.1;height:auto;background:#e6cda8;border-radius:12px;cursor:default}
+@media (max-width:620px){
+  .hud{grid-template-columns:1fr 1fr}
+  .hud .score{grid-column:1/-1}
+  .top h1{font-size:1.4rem}
+}
+@media (prefers-reduced-motion:reduce){.fill{transition:none}}
+/* tam ekranda ev, ekranın yüksekliğine sığacak kadar büyür */
+html:fullscreen{overflow:auto;background:var(--bg)}
+html:fullscreen .app{max-width:none}
+html:fullscreen .stage{width:min(100%,calc((100vh - 230px) * 1.6129));margin:0 auto}
+html:fullscreen .help{display:none}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1 id="ttl">Ata'nın Günü</h1>
+    <div class="meta">
+      <span class="pill" id="day">1. Gün</span>
+      <button id="bFull" type="button">Tam ekran</button>
+      <button id="bSet" type="button">Aile</button>
+      <button id="bSnd" type="button" aria-pressed="true">Ses: açık</button>
+    </div>
+  </header>
+
+  <section class="hud" aria-label="Durum">
+    <div class="score" id="score">0<small>Puan</small></div>
+    <div class="bar"><div class="lab"><span>Vitamin</span><b id="vitN">70</b></div><div class="track"><div class="fill" id="vitF" style="background:var(--good)"></div></div><div class="state" id="vitS"></div></div>
+    <div class="bar"><div class="lab"><span>Beyin</span><b id="brN">70</b></div><div class="track"><div class="fill" id="brF" style="background:var(--brain)"></div></div><div class="state" id="brS"></div></div>
+  </section>
+
+  <div class="tasks" id="tasks" aria-live="polite"></div>
+  <div class="banner" id="banner">Başlamak için “Başla”ya bas.</div>
+
+  <div class="stage">
+    <canvas id="cv" width="1000" height="620" aria-label="Ev planı. Bir yere dokunursan çocuk oraya yürür, eşyaya dokunursan onu kullanır."></canvas>
+    <div class="actbar" id="actbar"></div>
+  </div>
+  <p class="help">Dokun / tıkla: oraya yürü, eşyaya dokun: kullan. Klavye: ok tuşları veya WASD ile yürü, E / boşluk ile kullan. Top oyununda top ayağına gelince tıkla veya boşluğa bas.</p>
+</div>
+
+<div class="modal" id="modal" hidden><div class="card" id="mcard" role="dialog" aria-modal="true"></div></div>
+
+<script src="oyun-1.js"></script>
+<script src="oyun-2.js"></script>
+<script src="oyun-3.js"></script>
+<script src="oyun-4.js"></script>
+<script src="oyun-5.js"></script>
+
+</body>
+</html>
